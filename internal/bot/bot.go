@@ -11,7 +11,7 @@ import (
 
 // Represents TimeGuardBot
 type Bot struct {
-	config   *Config
+	config   *Config // FIXME возможно убрать отсюда
 	api      *tgbotapi.BotAPI
 	handlers map[string]CommandHandler
 	ctx      context.Context

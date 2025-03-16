@@ -4,11 +4,13 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/joho/godotenv"
 
 	"time-guard-bot/internal/bot"
+	"time-guard-bot/internal/storage"
 )
 
 func main() {
@@ -20,6 +22,30 @@ func main() {
 	if tgToken == "" {
 		log.Fatal("TELEGRAM_TOKEN is required")
 	}
+
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
+	redisPassword := os.Getenv("REDIS_PASSWORD")
+
+	redisDBStr := os.Getenv("REDIS_DB")
+	redisDB := 0
+	if redisDBStr != "" {
+		var err error
+		redisDB, err = strconv.Atoi(redisDBStr)
+		if err != nil {
+			log.Printf("Warning: invalid REDIS_DB, using default: %v", err)
+		}
+	}
+
+	// Create Redis storage
+	redisStorage, err := storage.NewRedisStorage(redisAddr, redisPassword, redisDB)
+	if err != nil {
+		log.Fatalf("Failed to create Redis storage: %v", err)
+	}
+	defer redisStorage.Close()
 
 	botConfig := &bot.Config{
 		Token:           tgToken,
