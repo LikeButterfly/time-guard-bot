@@ -1,0 +1,17 @@
+# Конфигурация IDE (VS Code)
+.vscode/
+.vscode/*
+
+# Переменные окружения
+.env
+
+# Бинарные файлы и кеш Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.a
+.bin

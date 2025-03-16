@@ -1,0 +1,12 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  disable-all: false
+  enable:
+    - goimports
+
+linters-settings:
+  goimports:
+    local-prefixes: github.com/LikeButterfly/time-guard-bot
