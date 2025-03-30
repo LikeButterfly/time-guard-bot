@@ -53,7 +53,7 @@ func main() {
 	}
 
 	// Create bot
-	b, err := bot.NewBot(botConfig)
+	b, err := bot.NewBot(botConfig, redisStorage)
 	if err != nil {
 		log.Fatalf("Failed to create bot: %v", err)
 	}

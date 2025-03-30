@@ -4,17 +4,25 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
+	"sync"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"time-guard-bot/internal/storage"
 )
 
 // Represents TimeGuardBot
 type Bot struct {
-	config   *Config // FIXME возможно убрать отсюда
+	config   *Config
 	api      *tgbotapi.BotAPI
+	storage  storage.Storage
 	handlers map[string]CommandHandler
 	ctx      context.Context
+	cancel   context.CancelFunc
+	// Управление таймерами
+	timers   map[string]*time.Timer
+	timersMx sync.RWMutex
 }
 
 // Represents bot configuration
@@ -24,18 +32,20 @@ type Config struct {
 }
 
 // Represents a function that handles a bot command
-type CommandHandler func(ctx context.Context, b *Bot, message *tgbotapi.Message, args []string) error
+type CommandHandler func(ctx context.Context, message *tgbotapi.Message, args []string) error
 
 // Creates a new Bot instance
-func NewBot(config *Config) (*Bot, error) {
+func NewBot(config *Config, storage storage.Storage) (*Bot, error) {
 	api, err := tgbotapi.NewBotAPI(config.Token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bot API: %w", err)
 	}
 
 	bot := &Bot{
-		config: config,
-		api:    api,
+		config:  config,
+		api:     api,
+		storage: storage,
+		timers:  make(map[string]*time.Timer),
 	}
 
 	bot.registerHandlers()
@@ -46,7 +56,9 @@ func NewBot(config *Config) (*Bot, error) {
 // Starts the bot
 func (b *Bot) Start() error {
 	// Create context for bot
-	b.ctx = context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	b.ctx = ctx
+	b.cancel = cancel
 
 	// Create update config
 	updateConfig := tgbotapi.NewUpdate(0)
@@ -56,7 +68,13 @@ func (b *Bot) Start() error {
 
 	b.setBotCommands()
 
-	// b.restoreActiveTasks // TODO
+	// // Restore active tasks
+	// log.Println("Restoring active timers...")
+	// if err := b.restoreActiveTasks(); err != nil {
+	// 	log.Printf("Error restoring timers: %v", err)
+	// } else {
+	// 	log.Println("Timers restored successfully")
+	// }
 
 	// Start update loop in a goroutine
 	go b.processUpdates(updates)
@@ -64,10 +82,23 @@ func (b *Bot) Start() error {
 	return nil
 }
 
+// Stops the bot
+func (b *Bot) Stop() {
+	if b.cancel != nil {
+		b.cancel()
+	}
+}
+
 // Sets the bot commands in Telegram
 func (b *Bot) setBotCommands() {
+	// Специально не добавляю start и help, чтобы было не так много команд (будет еще больше)
 	commands := []tgbotapi.BotCommand{
-		{Command: "help", Description: "Показать справку"},
+		{Command: "add", Description: "Add a new task: /add name [description]"},
+		{Command: "delete", Description: "Delete a task: /delete id"},
+		{Command: "tasks", Description: "List all tasks"},
+		{Command: "status", Description: "Show task status: /status [name]"},
+		{Command: "lock", Description: "Lock a task: /lock id [reason]"},
+		{Command: "unlock", Description: "Unlock a task: /unlock id"},
 	}
 
 	config := tgbotapi.NewSetMyCommands(commands...)
@@ -77,8 +108,6 @@ func (b *Bot) setBotCommands() {
 	}
 
 	log.Printf("Set bot commands is successful")
-
-	// TODO подумать стоит ли fatal'ить
 }
 
 // Processes updates from Telegram
@@ -90,58 +119,15 @@ func (b *Bot) processUpdates(updates tgbotapi.UpdatesChannel) {
 
 // Processes a single update from Telegram
 func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update) {
-	// TODO // Process callback queries (button presses)
-	// ...
+	// Process callback queries
+	if update.CallbackQuery != nil {
+		go b.handleCallbackQuery(ctx, update.CallbackQuery)
+		return
+	}
 
 	// Process messages
 	if update.Message != nil {
-		// Ignore non-command messages or edited messages
-		if !update.Message.IsCommand() && update.Message.ReplyToMessage == nil {
-			log.Printf("Ignore message: %v", update.Message)
-			return
-		}
-
 		go b.handleMessage(ctx, update.Message)
 		return
-	}
-}
-
-// Processes a message
-func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message) {
-	// Check if it's a command message
-	if message.IsCommand() {
-		command := message.Command()
-		args := strings.Fields(message.CommandArguments())
-
-		// Find handler for this command
-		handler, exists := b.handlers[command]
-		if !exists {
-			// Command not found, ignore it as per requirements
-			log.Printf("Ignore not found command: %v", command) // TODO - delete debug log or do this log to debug
-			return
-		}
-
-		// Execute handler
-		if err := handler(ctx, b, message, args); err != nil {
-			log.Printf("Error handling command %s: %v", command, err)
-			b.sendErrorMessage(message.Chat.ID, message.MessageID, "Error processing command. Please try again")
-		}
-		return
-	}
-
-	// TODO // Check if it's a reply to a message
-	// ...
-}
-
-// Sends an error message to a chat
-func (b *Bot) sendErrorMessage(chatID int64, replyToID int, text string) {
-	msg := tgbotapi.NewMessage(chatID, text)
-	if replyToID != 0 {
-		msg.ReplyToMessageID = replyToID
-	}
-
-	_, err := b.api.Send(msg)
-	if err != nil {
-		log.Printf("Can't send message: %v", msg) // TODO обработать
 	}
 }
