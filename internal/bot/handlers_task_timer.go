@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -60,13 +61,11 @@ func (b *Bot) handleTaskTimeout(chatID int64, taskID string) {
 		}
 	}
 
-	// End task
 	if err := b.storage.EndTask(ctx, chatID, taskID); err != nil {
 		log.Printf("Failed to end task on timeout: %v", err)
 		return
 	}
 
-	// Send notification to chat
 	text := "Time has expired! How's it going?"
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ReplyToMessageID = activeTask.MessageID
@@ -81,11 +80,11 @@ func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, 
 
 	task, err := b.storage.GetTaskByName(ctx, message.Chat.ID, taskName)
 	if err != nil {
-		if err == storage.ErrNotFound {
+		if errors.Is(err, storage.ErrNotFound) {
 			return b.sendErrorMessage(
 				message.Chat.ID,
 				message.MessageID,
-				fmt.Sprintf("Task '%s' not found", taskName),
+				fmt.Sprintf("Task *%s* not found", taskName),
 			)
 		}
 		return fmt.Errorf("failed to get task: %w", err)
@@ -150,7 +149,6 @@ func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, 
 	replyMsg := tgbotapi.NewMessage(message.Chat.ID, responseText)
 	replyMsg.ReplyToMessageID = message.MessageID
 
-	// Send message
 	sentMsg, err := b.api.Send(replyMsg)
 	if err != nil {
 		return fmt.Errorf("failed to send message: %w", err)
@@ -190,6 +188,120 @@ func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, 
 
 	// Start timer
 	b.startTaskTimer(message.Chat.ID, task.ID, time.Duration(duration)*time.Minute)
+
+	return nil
+}
+
+// Handles the /cancel [name] command
+// Cancels a running timer for a task. If name is provided, cancels that specific task
+// If no name is provided, cancels the last task the user started
+func (b *Bot) HandleCancelCommand(ctx context.Context, message *tgbotapi.Message, args []string) error {
+	var taskName string
+	if len(args) > 0 {
+		taskName = args[0]
+	}
+
+	// Get user's active tasks
+	activeTasks, err := b.storage.GetUserActiveTasks(ctx, message.Chat.ID, int64(message.From.ID))
+	if err != nil {
+		return fmt.Errorf("failed to get user's active tasks: %w", err)
+	}
+
+	if len(activeTasks) == 0 {
+		return b.sendErrorMessage(
+			message.Chat.ID,
+			message.MessageID,
+			"You don't have any active tasks",
+		)
+	}
+
+	var taskToCancel *models.ActiveTask
+
+	// If task name is provided, find that specific task
+	if taskName != "" {
+		// Find the task by name
+		task, err := b.storage.GetTaskByName(ctx, message.Chat.ID, taskName)
+		if err != nil {
+			if errors.Is(err, storage.ErrNotFound) {
+				return b.sendErrorMessage(
+					message.Chat.ID,
+					message.MessageID,
+					fmt.Sprintf("Task *%s* not found", taskName),
+				)
+			}
+			return fmt.Errorf("failed to get task: %w", err)
+		}
+
+		// Check if this task is active for the user
+		for _, activeTask := range activeTasks {
+			if activeTask.TaskID == task.ID {
+				taskToCancel = activeTask
+				break
+			}
+		}
+
+		if taskToCancel == nil {
+			return b.sendErrorMessage(
+				message.Chat.ID,
+				message.MessageID,
+				fmt.Sprintf("You don't have an active timer for task *%s*", taskName),
+			)
+		}
+	} else {
+		// No task name provided, use the last started task
+		// Sort tasks by start time, descending
+		var lastTask *models.ActiveTask
+		var latestStartTime time.Time
+
+		for _, task := range activeTasks {
+			if lastTask == nil || task.StartTime.After(latestStartTime) {
+				lastTask = task
+				latestStartTime = task.StartTime
+			}
+		}
+
+		taskToCancel = lastTask
+	}
+
+	// Cancel the timer
+	b.timersMx.Lock()
+	timerKey := fmt.Sprintf("%d:%s", message.Chat.ID, taskToCancel.TaskID)
+	timer, exists := b.timers[timerKey]
+	if exists {
+		timer.Stop()
+		delete(b.timers, timerKey)
+	}
+	b.timersMx.Unlock()
+
+	// Get task
+	task, err := b.storage.GetTask(ctx, message.Chat.ID, taskToCancel.TaskID)
+	if err != nil {
+		return fmt.Errorf("failed to get task: %w", err)
+	}
+
+	if taskToCancel.BotResponseID > 0 {
+		// Удаляем inline keyboard
+		emptyMarkup := tgbotapi.InlineKeyboardMarkup{
+			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{},
+		}
+		editMsg := tgbotapi.NewEditMessageReplyMarkup(message.Chat.ID, taskToCancel.BotResponseID, emptyMarkup)
+		if _, err := b.api.Send(editMsg); err != nil {
+			log.Printf("Failed to remove keyboard from original message: %v", err)
+		}
+	}
+
+	if err := b.storage.EndTask(ctx, message.Chat.ID, taskToCancel.TaskID); err != nil {
+		return fmt.Errorf("failed to end task: %w", err)
+	}
+
+	text := fmt.Sprintf("Timer for task *%s* has been cancelled", task.Name)
+	replyMsg := tgbotapi.NewMessage(message.Chat.ID, text)
+	replyMsg.ReplyToMessageID = task.MessageID
+	replyMsg.ParseMode = tgbotapi.ModeMarkdown
+
+	if _, err := b.api.Send(replyMsg); err != nil {
+		return fmt.Errorf("failed to send message: %w", err)
+	}
 
 	return nil
 }

@@ -94,11 +94,12 @@ func (b *Bot) setBotCommands() {
 	// Специально не добавляю start и help, чтобы было не так много команд (будет еще больше)
 	commands := []tgbotapi.BotCommand{
 		{Command: "add", Description: "Add a new task: /add name [description]"},
-		{Command: "delete", Description: "Delete a task: /delete id"},
+		{Command: "cancel", Description: "Cancel a task timer: /cancel [name]"},
+		{Command: "status", Description: "Show task(s) status: /status [name]"},
 		{Command: "tasks", Description: "List all tasks"},
-		{Command: "status", Description: "Show task status: /status [name]"},
 		{Command: "lock", Description: "Lock a task: /lock id [reason]"},
 		{Command: "unlock", Description: "Unlock a task: /unlock id"},
+		{Command: "delete", Description: "Delete a task: /delete id"},
 	}
 
 	config := tgbotapi.NewSetMyCommands(commands...)

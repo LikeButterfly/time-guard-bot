@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-redis/redis/v8"
@@ -9,7 +10,7 @@ import (
 	"time-guard-bot/internal/models"
 )
 
-// AddTask adds a new task to storage
+// Добавляет новый task
 func (rs *Storage) AddTask(ctx context.Context, task *models.Task) error {
 	// TODO do here gen task id
 	// мб тут и проверку, сущ-ет ли задача с таким же Name
@@ -51,7 +52,7 @@ func (rs *Storage) GetTask(ctx context.Context, groupID int64, taskID string) (*
 	taskKey := fmt.Sprintf(taskIDPrefix, groupID, taskID)
 	data, err := rs.client.Get(ctx, taskKey).Bytes()
 	if err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get task: %w", err)
@@ -65,7 +66,7 @@ func (rs *Storage) GetTask(ctx context.Context, groupID int64, taskID string) (*
 	return task, nil
 }
 
-// UpdateTask updates an existing task
+// Обновляет существующий task
 func (rs *Storage) UpdateTask(ctx context.Context, task *models.Task) error {
 	// Check if task exists
 	key := fmt.Sprintf(taskIDPrefix, task.GroupID, task.ID)
@@ -124,13 +125,13 @@ func (rs *Storage) UpdateTask(ctx context.Context, task *models.Task) error {
 	return nil
 }
 
-// Retrieves a task by its name
+// Извлекает task по name
 func (rs *Storage) GetTaskByName(ctx context.Context, groupID int64, name string) (*models.Task, error) {
 	// Get task ID from name index
 	nameKey := fmt.Sprintf(taskNamePrefix, groupID, name)
 	taskIDResult, err := rs.client.Get(ctx, nameKey).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get task ID by name: %w", err)
@@ -140,7 +141,7 @@ func (rs *Storage) GetTaskByName(ctx context.Context, groupID int64, name string
 	return rs.GetTask(ctx, groupID, taskIDResult)
 }
 
-// Deletes a task by ID
+// Удаляет task по id
 func (rs *Storage) DeleteTask(ctx context.Context, groupID int64, taskID string) error {
 	// Get task to retrieve name for index deletion
 	task, err := rs.GetTask(ctx, groupID, taskID)
@@ -174,7 +175,7 @@ func (rs *Storage) DeleteTask(ctx context.Context, groupID int64, taskID string)
 	return nil
 }
 
-// Retrieves all tasks for a group
+// Извлекает все tasks группы
 func (rs *Storage) ListTasks(ctx context.Context, groupID int64) ([]*models.Task, error) {
 	// Get all task IDs for the group
 	taskListK := fmt.Sprintf(taskListKey, groupID)
@@ -193,7 +194,7 @@ func (rs *Storage) ListTasks(ctx context.Context, groupID int64) ([]*models.Task
 	for _, id := range taskIDs {
 		task, err := rs.GetTask(ctx, groupID, id)
 		if err != nil {
-			if err == ErrNotFound {
+			if errors.Is(err, ErrNotFound) {
 				// Skip not found tasks (should not happen in normal operation)
 				continue
 			}
@@ -205,7 +206,7 @@ func (rs *Storage) ListTasks(ctx context.Context, groupID int64) ([]*models.Task
 	return tasks, nil
 }
 
-// Counts the number of tasks in a group
+// Считает кол-во tasks группы
 func (rs *Storage) CountTasks(ctx context.Context, groupID int64) (int64, error) {
 	taskListK := fmt.Sprintf(taskListKey, groupID)
 	count, err := rs.client.SCard(ctx, taskListK).Result()

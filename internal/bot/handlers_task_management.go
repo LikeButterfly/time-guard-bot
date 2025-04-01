@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -47,16 +48,19 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 
 	// Check if a task with this name already exists
 	_, err = b.storage.GetTaskByName(ctx, message.Chat.ID, shortName)
-	if err == nil {
+	if err != nil {
+		if errors.Is(err, redis.ErrNotFound) {
+			// Continue
+		} else {
+			return fmt.Errorf("failed to check if task exists: %w", err)
+		}
+	} else {
 		return b.sendErrorMessage(
 			message.Chat.ID,
 			message.MessageID,
-			fmt.Sprintf("A task with name '%s' already exists", shortName),
+			fmt.Sprintf("A task with name *%s* already exists", shortName),
 		)
-	} else if err != redis.ErrNotFound {
-		return fmt.Errorf("failed to check if task exists: %w", err)
 	}
-	// TODO err
 
 	// Generate a unique ID for the task
 	taskID, err := helpers.GenerateTaskID(helpers.TaskIDLength)
@@ -79,7 +83,6 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 		return fmt.Errorf("failed to add task: %w", err)
 	}
 
-	// Send success message
 	text := fmt.Sprintf("Task added successfully!\n\nName: *%s*\nID: `%s`", shortName, taskID)
 	if description != "" {
 		text += fmt.Sprintf("\nDescription: %s", description)
@@ -104,24 +107,24 @@ func (b *Bot) HandleDeleteCommand(ctx context.Context, message *tgbotapi.Message
 	// Get task to check if it exists
 	task, err := b.storage.GetTask(ctx, message.Chat.ID, taskID)
 	if err != nil {
-		if err == redis.ErrNotFound {
+		if errors.Is(err, redis.ErrNotFound) {
 			return b.sendErrorMessage(message.Chat.ID, message.MessageID,
-				fmt.Sprintf("Task with ID '%s' not found", taskID))
+				fmt.Sprintf("Task with ID *%s* not found", taskID))
 		}
 		return fmt.Errorf("failed to get task: %w", err)
 	}
 
-	// // TODO обработать, если task запущена
-	// if task.OwnerID != 0 {
-	// 	// TODO
-	// }
+	// Если task запущена
+	if task.OwnerID != 0 {
+		return b.sendErrorMessage(message.Chat.ID, message.MessageID,
+			fmt.Sprintf("Task *%s* is currently in use", task.Name))
+	}
 
 	// Delete task
 	if err := b.storage.DeleteTask(ctx, message.Chat.ID, taskID); err != nil {
-		return err
+		return fmt.Errorf("failed to delete task: %w", err)
 	}
 
-	// Send success message
 	text := fmt.Sprintf("Task deleted successfully!\n\nName: %s\nID: %s", task.Name, taskID)
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ReplyToMessageID = message.MessageID

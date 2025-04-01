@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -144,7 +145,7 @@ func (rs *Storage) GetActiveTask(ctx context.Context, groupID int64, taskID stri
 	activeTaskKey := fmt.Sprintf(activeTaskPrefix, groupID, taskID)
 	activeTaskJSON, err := rs.client.Get(ctx, activeTaskKey).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			return nil, ErrNotFound
 		}
 		return nil, fmt.Errorf("failed to get active task: %w", err)
@@ -171,7 +172,7 @@ func (rs *Storage) GetActiveTasks(ctx context.Context, groupID int64) ([]*models
 	for _, taskID := range taskIDs {
 		activeTask, err := rs.GetActiveTask(ctx, groupID, taskID)
 		if err != nil {
-			if err == ErrNotFound {
+			if errors.Is(err, ErrNotFound) {
 				// Skip task if not found (could happen if task was ended in another goroutine)
 				continue
 			}
@@ -195,7 +196,7 @@ func (rs *Storage) GetUserActiveTasks(ctx context.Context, groupID int64, userID
 	for _, taskID := range taskIDs {
 		activeTask, err := rs.GetActiveTask(ctx, groupID, taskID)
 		if err != nil {
-			if err == ErrNotFound {
+			if errors.Is(err, ErrNotFound) {
 				// Skip task if not found (could happen if task was ended in another goroutine)
 				continue
 			}

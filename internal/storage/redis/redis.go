@@ -20,9 +20,9 @@ const (
 	taskNamePrefix = "task_name:%d:%s" // task_name:groupID:taskShort
 	// list id's всех задач группы
 	taskListKey = "tasks:%d" // tasks:groupID
-	//
+	// Информация об активной задаче
 	activeTaskPrefix = "active:%d:%s" // active:groupID:taskID
-	//
+	// list id's всех активных задач группы
 	activeTaskListKey = "active:%d" // active:groupID
 	// list id's всех активных задач конкретного пользователя
 	userTasksKey = "user:%d:%d" // user:groupID:userID

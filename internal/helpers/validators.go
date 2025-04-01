@@ -20,22 +20,22 @@ var (
 func ValidateShortName(shortName string) error {
 	// Check if short name is empty
 	if shortName == "" {
-		return fmt.Errorf("краткое название не может быть пустым")
+		return fmt.Errorf("name can not be empty")
 	}
 
 	// Check if short name starts with @
 	if strings.HasPrefix(shortName, "@") {
-		return fmt.Errorf("краткое название не может начинаться с '@'")
-	}
-
-	// Check if short name is too long
-	if len(shortName) > maxShortNameLength {
-		return fmt.Errorf("краткое название не может быть длиннее %d символов", maxShortNameLength)
+		return fmt.Errorf("name can not start with '@'")
 	}
 
 	// Check if short name contains only allowed characters
 	if !shortNameRegex.MatchString(shortName) {
-		return fmt.Errorf("краткое название может содержать только буквы, цифры, подчеркивания и дефисы")
+		return fmt.Errorf("name can only contain Latin letters, numbers, underscores, and dashes")
+	}
+
+	// Check if short name is too long
+	if len(shortName) > maxShortNameLength {
+		return fmt.Errorf("name can not be longer than %d characters", maxShortNameLength)
 	}
 
 	return nil

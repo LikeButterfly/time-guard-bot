@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -30,11 +31,11 @@ func (b *Bot) getTaskStatus(ctx context.Context, message *tgbotapi.Message, task
 	// Try to get by short name
 	task, err := b.storage.GetTaskByName(ctx, message.Chat.ID, taskName)
 	if err != nil {
-		if err == redis.ErrNotFound {
+		if errors.Is(err, redis.ErrNotFound) {
 			return b.sendErrorMessage(
 				message.Chat.ID,
 				message.MessageID,
-				fmt.Sprintf("Task '%s' not found", taskName),
+				fmt.Sprintf("Task *%s* not found", taskName),
 			)
 		}
 		return fmt.Errorf("failed to get task: %w", err)
@@ -147,7 +148,6 @@ func (b *Bot) getAllTasksStatus(ctx context.Context, message *tgbotapi.Message) 
 		text.WriteString(taskLine)
 	}
 
-	// Send message with Markdown formatting
 	msg := tgbotapi.NewMessage(message.Chat.ID, text.String())
 	msg.ParseMode = tgbotapi.ModeMarkdown
 	_, err = b.api.Send(msg)

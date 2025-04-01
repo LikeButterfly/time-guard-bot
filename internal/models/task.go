@@ -21,8 +21,8 @@ type Task struct {
 	IsLocked   bool   `json:"is_locked"`   // Whether the task is locked
 	LockReason string `json:"lock_reason"` // Reason for locking the task
 
-	MessageID     int `json:"message_id"`      // Original message ID // FIXME возможно не пригодиться
-	BotResponseID int `json:"bot_response_id"` // Bot's response message ID // FIXME нужен ли?
+	MessageID     int `json:"message_id"`      // Original message ID
+	BotResponseID int `json:"bot_response_id"` // Bot's response message ID
 }
 
 // Represents a task that is currently active
@@ -63,7 +63,7 @@ func (t *Task) TimeRemaining() int64 {
 
 // TimeRemaining returns the time remaining in seconds
 func (t *ActiveTask) TimeRemaining() int64 {
-	// FIXME через Until?
+	// FIXME? через Until?
 	endTime := t.StartTime.Add(time.Duration(t.Duration) * time.Minute)
 	remaining := endTime.Unix() - time.Now().Unix()
 	if remaining < 0 {

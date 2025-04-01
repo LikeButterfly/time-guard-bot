@@ -11,7 +11,7 @@ func (b *Bot) HandleStartCommand(ctx context.Context, message *tgbotapi.Message,
 	text := "👋 Hello! I'm TimeGuardBot - a bot for managing task time\n\n"
 
 	text += "This bot helps your team track and manage time spent on various tasks. "
-	text += "It allows you to control who's working on what and for how long, improving productivity and coordination.\n\n"
+	text += "It allows you to control who's working on what and for how long, improving productivity and coordination\n\n"
 
 	text += "Use /help to get a list of available commands"
 
@@ -22,9 +22,9 @@ func (b *Bot) HandleStartCommand(ctx context.Context, message *tgbotapi.Message,
 
 // Handles the /help command
 func (b *Bot) HandleHelpCommand(ctx context.Context, message *tgbotapi.Message, args []string) error {
-	text := "📚 Available Commands:\n\n"
+	text := ""
 
-	text += "📝 Task Management:\n"
+	text += "<b>Task Management</b>:\n"
 	text += "/add {task_name} [task_desc] - Add a new task with a name and optional description\n"
 	text += "/delete {task_id} - Delete a task by ID\n"
 	text += "/tasks - List all tasks in this group\n"
@@ -32,15 +32,17 @@ func (b *Bot) HandleHelpCommand(ctx context.Context, message *tgbotapi.Message, 
 	text += "/lock {task_id} [reason] - Lock a task, preventing it from being started\n"
 	text += "/unlock {task_id} - Unlock a previously locked task\n\n"
 
-	text += "⏱️ Time Tracking:\n"
-	text += "/{minutes} {task_name} - Start a timer for a task (e.g., '/30 coding')\n\n"
+	text += "<b>Time Tracking</b>:\n"
+	text += "/{minutes} {task_name} - Start a timer for a task (e.g., '/30 coding')\n"
+	text += "/cancel [task_name] - Cancel specified timer (defaults to latest)\n\n"
 
-	text += "Notes:\n"
+	text += "<b>Notes</b>:\n"
 	text += "- Maximum task duration: 1440 minutes (24 hours)\n" // FIXME
 	text += "- Maximum tasks per user: 4\n"                      // FIXME
 	text += "- Maximum tasks per group: 32"                      // FIXME
 
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
+	msg.ParseMode = tgbotapi.ModeHTML
 	_, err := b.api.Send(msg)
 	return err
 }

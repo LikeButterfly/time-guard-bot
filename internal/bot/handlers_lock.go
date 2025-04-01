@@ -2,11 +2,13 @@ package bot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
-	"time-guard-bot/internal/storage/redis"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"time-guard-bot/internal/storage/redis"
 )
 
 // Handles the /lock command: /lock {id} {reason}
@@ -27,11 +29,11 @@ func (b *Bot) HandleLockCommand(ctx context.Context, message *tgbotapi.Message, 
 	// Get task to lock
 	task, err := b.storage.GetTask(ctx, message.Chat.ID, taskID)
 	if err != nil {
-		if err == redis.ErrNotFound {
+		if errors.Is(err, redis.ErrNotFound) {
 			return b.sendErrorMessage(
 				message.Chat.ID,
 				message.MessageID,
-				fmt.Sprintf("Task with ID '%s' not found", taskID),
+				fmt.Sprintf("Task with ID *%s* not found", taskID),
 			)
 		}
 		return fmt.Errorf("failed to get task: %w", err)
@@ -62,14 +64,11 @@ func (b *Bot) HandleLockCommand(ctx context.Context, message *tgbotapi.Message, 
 		return fmt.Errorf("failed to update task: %w", err)
 	}
 
-	// Send success message
 	text := fmt.Sprintf("🔒 Task *%s* locked successfully", task.Name)
-	if reason != "" {
-		text += fmt.Sprintf("\nReason: %s", reason)
-	}
 
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ReplyToMessageID = message.MessageID
+	msg.ParseMode = tgbotapi.ModeMarkdown
 	_, err = b.api.Send(msg)
 	return err
 }
@@ -86,9 +85,9 @@ func (b *Bot) HandleUnlockCommand(ctx context.Context, message *tgbotapi.Message
 	// Get task to unlock
 	task, err := b.storage.GetTask(ctx, message.Chat.ID, taskID)
 	if err != nil {
-		if err == redis.ErrNotFound {
+		if errors.Is(err, redis.ErrNotFound) {
 			return b.sendErrorMessage(message.Chat.ID, message.MessageID,
-				fmt.Sprintf("Task with ID '%s' not found", taskID))
+				fmt.Sprintf("Task with ID *%s* not found", taskID))
 		}
 		return fmt.Errorf("failed to get task: %w", err)
 	}
@@ -96,7 +95,7 @@ func (b *Bot) HandleUnlockCommand(ctx context.Context, message *tgbotapi.Message
 	// Check if already unlocked
 	if !task.IsLocked {
 		return b.sendErrorMessage(message.Chat.ID, message.MessageID,
-			fmt.Sprintf("Task '%s' is not locked", task.Name))
+			fmt.Sprintf("Task *%s* is not locked", task.Name))
 	}
 
 	// Unlock task
@@ -107,11 +106,11 @@ func (b *Bot) HandleUnlockCommand(ctx context.Context, message *tgbotapi.Message
 		return fmt.Errorf("failed to update task: %w", err)
 	}
 
-	// Send success message
-	text := fmt.Sprintf("🟢 Task '%s' unlocked successfully", task.Name)
+	text := fmt.Sprintf("🟢 Task *%s* unlocked successfully", task.Name)
 
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ReplyToMessageID = message.MessageID
+	msg.ParseMode = tgbotapi.ModeMarkdown
 	_, err = b.api.Send(msg)
 	return err
 }
