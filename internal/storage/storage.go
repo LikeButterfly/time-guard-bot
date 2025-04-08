@@ -28,6 +28,7 @@ type Storage interface {
 	EndTask(ctx context.Context, groupID int64, taskID string) error
 	GetActiveTask(ctx context.Context, groupID int64, taskID string) (*models.ActiveTask, error)
 	GetActiveTasks(ctx context.Context, groupID int64) ([]*models.ActiveTask, error)
+	GetActiveGroups(ctx context.Context) ([]int64, error)
 	GetUserActiveTasks(ctx context.Context, groupID int64, userID int64) ([]*models.ActiveTask, error)
 	GetCountUserActiveTasks(ctx context.Context, groupID int64, userID int64) (int64, error)
 

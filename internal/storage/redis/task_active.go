@@ -218,3 +218,28 @@ func (rs *Storage) GetCountUserActiveTasks(ctx context.Context, groupID int64, u
 
 	return count, nil
 }
+
+// Gets all groups with active tasks
+func (rs *Storage) GetActiveGroups(ctx context.Context) ([]int64, error) {
+	var groupIDs []int64
+
+	// Get all keys matching the active task list pattern
+	keys, err := rs.client.Keys(ctx, "active:*").Result()
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract group IDs from keys
+	for _, key := range keys {
+		var groupID int64
+		if n, err := fmt.Sscanf(key, activeTaskListKey, &groupID); err == nil && n == 1 {
+			// Check if the set has members
+			count, err := rs.client.SCard(ctx, key).Result()
+			if err == nil && count > 0 {
+				groupIDs = append(groupIDs, groupID)
+			}
+		}
+	}
+
+	return groupIDs, nil
+}

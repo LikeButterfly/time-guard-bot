@@ -68,13 +68,13 @@ func (b *Bot) Start() error {
 
 	b.setBotCommands()
 
-	// // Restore active tasks
-	// log.Println("Restoring active timers...")
-	// if err := b.restoreActiveTasks(); err != nil {
-	// 	log.Printf("Error restoring timers: %v", err)
-	// } else {
-	// 	log.Println("Timers restored successfully")
-	// }
+	// Restore active tasks
+	log.Println("Restoring active timers...")
+	if err := b.restoreActiveTasks(); err != nil {
+		log.Printf("Error restoring timers: %v", err)
+	} else {
+		log.Println("Timers restored successfully")
+	}
 
 	// Start update loop in a goroutine
 	go b.processUpdates(updates)
@@ -131,4 +131,53 @@ func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update) {
 		go b.handleMessage(ctx, update.Message)
 		return
 	}
+}
+
+// Restores active tasks from storage
+func (b *Bot) restoreActiveTasks() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	groups, err := b.storage.GetActiveGroups(ctx)
+	if err != nil {
+		log.Printf("Failed to get groups with active tasks: %v", err)
+	}
+
+	if len(groups) == 0 {
+		log.Printf("No active tasks found")
+		return nil
+	}
+
+	log.Printf("Found %d groups with potential active tasks", len(groups))
+
+	restoredCount := 0
+	for _, groupID := range groups {
+		// Get all active tasks for this group
+		activeTasks, err := b.storage.GetActiveTasks(ctx, groupID)
+		if err != nil {
+			log.Printf("Error retrieving active tasks: %v", err)
+			continue
+		}
+
+		if len(activeTasks) == 0 {
+			continue
+		}
+
+		// Restore each task's timer
+		for _, task := range activeTasks {
+			remaining := task.TimeRemaining()
+
+			if remaining <= 0 {
+				go b.handleTaskTimeout(task.GroupID, task.TaskID)
+				continue
+			}
+
+			// Start a new timer with the remaining time
+			b.startTaskTimer(task.GroupID, task.TaskID, time.Duration(remaining)*time.Second)
+			restoredCount++
+		}
+	}
+
+	log.Printf("Restored %d active timers", restoredCount)
+	return nil
 }
