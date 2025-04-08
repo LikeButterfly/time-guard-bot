@@ -38,8 +38,8 @@ func (b *Bot) HandleHelpCommand(ctx context.Context, message *tgbotapi.Message, 
 
 	text += "<b>Notes</b>:\n"
 	text += "- Maximum task duration: 1440 minutes (24 hours)\n" // FIXME
-	text += "- Maximum tasks per user: 4\n"                      // FIXME
-	text += "- Maximum tasks per group: 32"                      // FIXME
+	text += "- Maximum active tasks per user: 4\n"               // FIXME
+	text += "- Maximum tasks per group: 16"                      // FIXME
 
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ParseMode = tgbotapi.ModeHTML

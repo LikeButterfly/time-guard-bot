@@ -14,7 +14,7 @@ const (
 	TaskIDChars = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 	// Maximum number of tasks per group
-	MaxTasksPerGroup = 32
+	MaxTasksPerGroup = 16
 
 	// Maximum number of tasks per user in a group
 	MaxTasksPerUser = 4

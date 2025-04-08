@@ -120,7 +120,7 @@ func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, 
 		return err
 	}
 
-	if count > helpers.MaxTasksPerUser {
+	if count >= helpers.MaxTasksPerUser {
 		return b.sendErrorMessage(
 			message.Chat.ID,
 			message.MessageID,
