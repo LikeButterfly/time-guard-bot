@@ -4,7 +4,7 @@
 
 ----------------------------
 
-## Руководство по сборке проекта и настройке pre-commit
+## Руководство по сборке проекта и настройке линтера
 
 ### Подготовка проекта
 
@@ -28,24 +28,26 @@ make build
 make run
 ```
 
-### Настройка pre-commit
+### Настройка и использование golangci-lint
 
-1. **Установка pre-commit**
+1. **Установка golangci-lint**
 
 ```bash
-pip install pre-commit
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 ```
 
-2. **Установка хуков**
+2. **Запуск линтера**
+
+    Запускает все линтеры на всех файлах проекта:
 
 ```bash
-pre-commit install
+golangci-lint run
 ```
 
-3. **Запуск хуков**
+3. **Автоматическое исправление проблем**
 
-    Запускает все хуки на всех файлах:
+    Исправляет автоматически исправляемые проблемы:
 
 ```bash
-pre-commit run -a
+golangci-lint run --fix
 ```

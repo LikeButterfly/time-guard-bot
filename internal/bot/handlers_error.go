@@ -13,5 +13,6 @@ func (b *Bot) sendErrorMessage(chatID int64, replyToID int, text string) error {
 	msg.ReplyToMessageID = replyToID
 	msg.ParseMode = tgbotapi.ModeMarkdown
 	_, err := b.api.Send(msg)
+
 	return err
 }

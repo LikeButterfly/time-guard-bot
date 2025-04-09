@@ -48,10 +48,12 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message) {
 			args := strings.Fields(message.CommandArguments())
 			if err := handler(ctx, message, args); err != nil {
 				log.Printf("Error handling command %s: %v", command, err)
+
 				if err := b.sendErrorMessage(message.Chat.ID, message.MessageID, "Error processing command. Please try again"); err != nil {
 					log.Printf("Failed to send error message: %v", err)
 				}
 			}
+
 			return
 		}
 
@@ -63,6 +65,7 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message) {
 			if err := b.sendErrorMessage(message.Chat.ID, message.MessageID, "Duration must be more than 1"); err != nil {
 				log.Printf("Failed to send error message: %v", err)
 			}
+
 			return
 		}
 
@@ -74,6 +77,7 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message) {
 			); err != nil {
 				log.Printf("Failed to send error message: %v", err)
 			}
+
 			return
 		}
 
@@ -82,15 +86,18 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message) {
 			if err := b.sendErrorMessage(message.Chat.ID, message.MessageID, "Please provide a task name"); err != nil {
 				log.Printf("Failed to send error message: %v", err)
 			}
+
 			return
 		}
 
 		if err := b.handleTimeCommand(ctx, message, duration, args[0]); err != nil {
 			log.Printf("Error handling command %s: %v", command, err)
+
 			if err := b.sendErrorMessage(message.Chat.ID, message.MessageID, "Error processing timer command"); err != nil {
 				log.Printf("Failed to send error message: %v", err)
 			}
 		}
+
 		return
 	}
 

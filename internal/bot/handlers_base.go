@@ -17,6 +17,7 @@ func (b *Bot) HandleStartCommand(ctx context.Context, message *tgbotapi.Message,
 
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	_, err := b.api.Send(msg)
+
 	return err
 }
 
@@ -44,5 +45,6 @@ func (b *Bot) HandleHelpCommand(ctx context.Context, message *tgbotapi.Message, 
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ParseMode = tgbotapi.ModeHTML
 	_, err := b.api.Send(msg)
+
 	return err
 }

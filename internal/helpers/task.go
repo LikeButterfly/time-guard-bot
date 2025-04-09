@@ -36,6 +36,7 @@ func GenerateTaskID(length int) (string, error) {
 		if err != nil {
 			return "", err
 		}
+
 		id[i] = TaskIDChars[idx.Int64()]
 	}
 

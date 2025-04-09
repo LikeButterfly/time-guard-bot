@@ -14,7 +14,6 @@ import (
 func (rs *Storage) AddTask(ctx context.Context, task *models.Task) error {
 	// TODO do here gen task id
 	// мб тут и проверку, сущ-ет ли задача с таким же Name
-
 	// Marshal task to JSON
 	taskData, err := task.Marshal()
 	if err != nil {
@@ -50,11 +49,13 @@ func (rs *Storage) AddTask(ctx context.Context, task *models.Task) error {
 // Извлекает task по id
 func (rs *Storage) GetTask(ctx context.Context, groupID int64, taskID string) (*models.Task, error) {
 	taskKey := fmt.Sprintf(taskIDPrefix, groupID, taskID)
+
 	data, err := rs.client.Get(ctx, taskKey).Bytes()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return nil, ErrNotFound
 		}
+
 		return nil, fmt.Errorf("failed to get task: %w", err)
 	}
 
@@ -70,10 +71,12 @@ func (rs *Storage) GetTask(ctx context.Context, groupID int64, taskID string) (*
 func (rs *Storage) UpdateTask(ctx context.Context, task *models.Task) error {
 	// Check if task exists
 	key := fmt.Sprintf(taskIDPrefix, task.GroupID, task.ID)
+
 	exists, err := rs.client.Exists(ctx, key).Result()
 	if err != nil {
 		return fmt.Errorf("failed to check if task exists: %w", err)
 	}
+
 	if exists == 0 {
 		return ErrNotFound
 	}
@@ -129,11 +132,13 @@ func (rs *Storage) UpdateTask(ctx context.Context, task *models.Task) error {
 func (rs *Storage) GetTaskByName(ctx context.Context, groupID int64, name string) (*models.Task, error) {
 	// Get task ID from name index
 	nameKey := fmt.Sprintf(taskNamePrefix, groupID, name)
+
 	taskIDResult, err := rs.client.Get(ctx, nameKey).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return nil, ErrNotFound
 		}
+
 		return nil, fmt.Errorf("failed to get task ID by name: %w", err)
 	}
 
@@ -179,6 +184,7 @@ func (rs *Storage) DeleteTask(ctx context.Context, groupID int64, taskID string)
 func (rs *Storage) ListTasks(ctx context.Context, groupID int64) ([]*models.Task, error) {
 	// Get all task IDs for the group
 	taskListK := fmt.Sprintf(taskListKey, groupID)
+
 	taskIDs, err := rs.client.SMembers(ctx, taskListK).Result()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get task IDs: %w", err)
@@ -191,6 +197,7 @@ func (rs *Storage) ListTasks(ctx context.Context, groupID int64) ([]*models.Task
 
 	// Get each task
 	tasks := make([]*models.Task, 0, len(taskIDs))
+
 	for _, id := range taskIDs {
 		task, err := rs.GetTask(ctx, groupID, id)
 		if err != nil {
@@ -198,8 +205,10 @@ func (rs *Storage) ListTasks(ctx context.Context, groupID int64) ([]*models.Task
 				// Skip not found tasks (should not happen in normal operation)
 				continue
 			}
+
 			return nil, err
 		}
+
 		tasks = append(tasks, task)
 	}
 
@@ -209,6 +218,7 @@ func (rs *Storage) ListTasks(ctx context.Context, groupID int64) ([]*models.Task
 // Считает кол-во tasks группы
 func (rs *Storage) CountTasks(ctx context.Context, groupID int64) (int64, error) {
 	taskListK := fmt.Sprintf(taskListKey, groupID)
+
 	count, err := rs.client.SCard(ctx, taskListK).Result()
 	if err != nil {
 		return 0, fmt.Errorf("failed to count tasks: %w", err)

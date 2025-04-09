@@ -36,6 +36,7 @@ func (b *Bot) HandleLockCommand(ctx context.Context, message *tgbotapi.Message, 
 				fmt.Sprintf("Task with ID *%s* not found", taskID),
 			)
 		}
+
 		return fmt.Errorf("failed to get task: %w", err)
 	}
 
@@ -70,6 +71,7 @@ func (b *Bot) HandleLockCommand(ctx context.Context, message *tgbotapi.Message, 
 	msg.ReplyToMessageID = message.MessageID
 	msg.ParseMode = tgbotapi.ModeMarkdown
 	_, err = b.api.Send(msg)
+
 	return err
 }
 
@@ -89,6 +91,7 @@ func (b *Bot) HandleUnlockCommand(ctx context.Context, message *tgbotapi.Message
 			return b.sendErrorMessage(message.Chat.ID, message.MessageID,
 				fmt.Sprintf("Task with ID *%s* not found", taskID))
 		}
+
 		return fmt.Errorf("failed to get task: %w", err)
 	}
 
@@ -112,5 +115,6 @@ func (b *Bot) HandleUnlockCommand(ctx context.Context, message *tgbotapi.Message
 	msg.ReplyToMessageID = message.MessageID
 	msg.ParseMode = tgbotapi.ModeMarkdown
 	_, err = b.api.Send(msg)
+
 	return err
 }

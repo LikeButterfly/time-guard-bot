@@ -55,6 +55,7 @@ func (b *Bot) handleTaskTimeout(chatID int64, taskID string) {
 		emptyMarkup := tgbotapi.InlineKeyboardMarkup{
 			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{},
 		}
+
 		editMsg := tgbotapi.NewEditMessageReplyMarkup(chatID, activeTask.BotResponseID, emptyMarkup)
 		if _, err := b.api.Send(editMsg); err != nil {
 			log.Printf("Failed to remove keyboard from original message: %v", err)
@@ -77,7 +78,6 @@ func (b *Bot) handleTaskTimeout(chatID int64, taskID string) {
 
 // Специальная функция для обработки команд вида /{time} {name}
 func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, duration int, taskName string) error {
-
 	task, err := b.storage.GetTaskByName(ctx, message.Chat.ID, taskName)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
@@ -87,6 +87,7 @@ func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, 
 				fmt.Sprintf("Task *%s* not found", taskName),
 			)
 		}
+
 		return fmt.Errorf("failed to get task: %w", err)
 	}
 
@@ -96,6 +97,7 @@ func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, 
 		if task.LockReason != "" {
 			errMsg += fmt.Sprintf(". Reason: %s", task.LockReason)
 		}
+
 		return b.sendErrorMessage(message.Chat.ID, message.MessageID, errMsg)
 	}
 
@@ -111,6 +113,7 @@ func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, 
 		}
 
 		errMsg := fmt.Sprintf("Another user is currently working on the task. %d:%02d remaining", remainingMin, remainingSec)
+
 		return b.sendErrorMessage(message.Chat.ID, message.MessageID, errMsg)
 	}
 
@@ -181,6 +184,7 @@ func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, 
 		),
 	)
 	editMsg := tgbotapi.NewEditMessageReplyMarkup(message.Chat.ID, sentMsg.MessageID, hourglassButton)
+
 	sentMsg, err = b.api.Send(editMsg)
 	if err != nil {
 		log.Printf("Failed to add inline keyboard: %v", err)
@@ -229,6 +233,7 @@ func (b *Bot) HandleCancelCommand(ctx context.Context, message *tgbotapi.Message
 					fmt.Sprintf("Task *%s* not found", taskName),
 				)
 			}
+
 			return fmt.Errorf("failed to get task: %w", err)
 		}
 
@@ -251,6 +256,7 @@ func (b *Bot) HandleCancelCommand(ctx context.Context, message *tgbotapi.Message
 		// No task name provided, use the last started task
 		// Sort tasks by start time, descending
 		var lastTask *models.ActiveTask
+
 		var latestStartTime time.Time
 
 		for _, task := range activeTasks {
@@ -266,6 +272,7 @@ func (b *Bot) HandleCancelCommand(ctx context.Context, message *tgbotapi.Message
 	// Cancel the timer
 	b.timersMx.Lock()
 	timerKey := fmt.Sprintf("%d:%s", message.Chat.ID, taskToCancel.TaskID)
+
 	timer, exists := b.timers[timerKey]
 	if exists {
 		timer.Stop()
@@ -284,6 +291,7 @@ func (b *Bot) HandleCancelCommand(ctx context.Context, message *tgbotapi.Message
 		emptyMarkup := tgbotapi.InlineKeyboardMarkup{
 			InlineKeyboard: [][]tgbotapi.InlineKeyboardButton{},
 		}
+
 		editMsg := tgbotapi.NewEditMessageReplyMarkup(message.Chat.ID, taskToCancel.BotResponseID, emptyMarkup)
 		if _, err := b.api.Send(editMsg); err != nil {
 			log.Printf("Failed to remove keyboard from original message: %v", err)

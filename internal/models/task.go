@@ -48,16 +48,19 @@ func UnmarshalTask(data []byte) (*Task, error) {
 	if err := json.Unmarshal(data, &task); err != nil {
 		return nil, err
 	}
+
 	return &task, nil
 }
 
 // TimeRemaining returns the time remaining in seconds
 func (t *Task) TimeRemaining() int64 {
 	endTime := t.StartTime.Add(time.Duration(t.Duration) * time.Minute)
+
 	remaining := endTime.Unix() - time.Now().Unix()
 	if remaining < 0 {
 		return 0
 	}
+
 	return remaining
 }
 
@@ -65,9 +68,11 @@ func (t *Task) TimeRemaining() int64 {
 func (t *ActiveTask) TimeRemaining() int64 {
 	// FIXME? через Until?
 	endTime := t.StartTime.Add(time.Duration(t.Duration) * time.Minute)
+
 	remaining := endTime.Unix() - time.Now().Unix()
 	if remaining < 0 {
 		return 0
 	}
+
 	return remaining
 }

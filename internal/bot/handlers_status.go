@@ -22,12 +22,12 @@ func (b *Bot) HandleStatusCommand(ctx context.Context, message *tgbotapi.Message
 
 	// Get status of specific task
 	taskName := args[0]
+
 	return b.getTaskStatus(ctx, message, taskName)
 }
 
 // Get status of a specific task
 func (b *Bot) getTaskStatus(ctx context.Context, message *tgbotapi.Message, taskName string) error {
-
 	// Try to get by short name
 	task, err := b.storage.GetTaskByName(ctx, message.Chat.ID, taskName)
 	if err != nil {
@@ -38,14 +38,17 @@ func (b *Bot) getTaskStatus(ctx context.Context, message *tgbotapi.Message, task
 				fmt.Sprintf("Task *%s* not found", taskName),
 			)
 		}
+
 		return fmt.Errorf("failed to get task: %w", err)
 	}
 
 	var statusEmoji string
+
 	var statusInfo string
 
 	if task.IsLocked {
 		statusEmoji = "🔒"
+
 		statusInfo = "Locked"
 		if task.LockReason != "" {
 			statusInfo += fmt.Sprintf(" (%s)", task.LockReason)
@@ -55,12 +58,15 @@ func (b *Bot) getTaskStatus(ctx context.Context, message *tgbotapi.Message, task
 			statusEmoji = "⏱"
 			// Get active task info for remaining time
 			remaining := task.TimeRemaining()
+
 			var remainingTime string
+
 			if remaining < 60 {
 				remainingTime = "< 1 min."
 			} else {
 				remainingTime = fmt.Sprintf("%d min.", remaining/60)
 			}
+
 			statusInfo = fmt.Sprintf("Remaining: %s", remainingTime)
 		} else {
 			statusEmoji = "🟢"
@@ -73,6 +79,7 @@ func (b *Bot) getTaskStatus(ctx context.Context, message *tgbotapi.Message, task
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ReplyToMessageID = message.MessageID
 	_, err = b.api.Send(msg)
+
 	return err
 }
 
@@ -95,6 +102,7 @@ func (b *Bot) getAllTasksStatus(ctx context.Context, message *tgbotapi.Message) 
 	activeTasks, err := b.storage.GetActiveTasks(ctx, message.Chat.ID)
 	if err != nil {
 		log.Printf("Failed to get active tasks: %v", err)
+
 		activeTasks = []*models.ActiveTask{} // Empty slice as fallback
 	}
 
@@ -106,15 +114,18 @@ func (b *Bot) getAllTasksStatus(ctx context.Context, message *tgbotapi.Message) 
 
 	// Build status message
 	var text strings.Builder
+
 	text.WriteString("Tasks Status:\n\n")
 
 	for _, task := range tasks {
 		// Get status emoji
 		var statusEmoji string
+
 		var statusInfo string
 
 		if task.IsLocked {
 			statusEmoji = "🔒"
+
 			statusInfo = "Locked"
 			if task.LockReason != "" {
 				statusInfo += fmt.Sprintf(" (%s)", task.LockReason)
@@ -127,17 +138,19 @@ func (b *Bot) getAllTasksStatus(ctx context.Context, message *tgbotapi.Message) 
 				activeTask, exists := activeTasksMap[task.ID]
 				if exists {
 					remaining := activeTask.TimeRemaining()
+
 					var remainingTime string
+
 					if remaining < 60 {
 						remainingTime = "< 1 min."
 					} else {
 						remainingTime = fmt.Sprintf("%d min.", remaining/60)
 					}
+
 					statusInfo = fmt.Sprintf("Remaining: %s", remainingTime)
 				} else {
 					statusInfo = "Unexpected" // TODO обработать
 				}
-
 			} else {
 				statusEmoji = "🟢"
 				statusInfo = "Available"
@@ -151,5 +164,6 @@ func (b *Bot) getAllTasksStatus(ctx context.Context, message *tgbotapi.Message) 
 	msg := tgbotapi.NewMessage(message.Chat.ID, text.String())
 	msg.ParseMode = tgbotapi.ModeMarkdown
 	_, err = b.api.Send(msg)
+
 	return err
 }

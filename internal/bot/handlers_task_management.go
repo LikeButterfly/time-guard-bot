@@ -92,6 +92,7 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 	msg.ReplyToMessageID = message.MessageID
 	msg.ParseMode = tgbotapi.ModeMarkdown
 	_, err = b.api.Send(msg)
+
 	return err
 }
 
@@ -111,6 +112,7 @@ func (b *Bot) HandleDeleteCommand(ctx context.Context, message *tgbotapi.Message
 			return b.sendErrorMessage(message.Chat.ID, message.MessageID,
 				fmt.Sprintf("Task with ID *%s* not found", taskID))
 		}
+
 		return fmt.Errorf("failed to get task: %w", err)
 	}
 
@@ -129,6 +131,7 @@ func (b *Bot) HandleDeleteCommand(ctx context.Context, message *tgbotapi.Message
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ReplyToMessageID = message.MessageID
 	_, err = b.api.Send(msg)
+
 	return err
 }
 
@@ -144,11 +147,13 @@ func (b *Bot) HandleTasksCommand(ctx context.Context, message *tgbotapi.Message,
 		msg := tgbotapi.NewMessage(message.Chat.ID, "No tasks found for this group. Use /add to create a task")
 		msg.ReplyToMessageID = message.MessageID
 		_, err = b.api.Send(msg)
+
 		return err
 	}
 
 	// Format tasks list
 	text := "Tasks:\n\n"
+
 	for _, task := range tasks {
 		// Task status
 		status := "🟢"
@@ -165,5 +170,6 @@ func (b *Bot) HandleTasksCommand(ctx context.Context, message *tgbotapi.Message,
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ParseMode = tgbotapi.ModeMarkdown
 	_, err = b.api.Send(msg)
+
 	return err
 }

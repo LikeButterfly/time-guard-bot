@@ -70,6 +70,7 @@ func (b *Bot) Start() error {
 
 	// Restore active tasks
 	log.Println("Restoring active timers...")
+
 	if err := b.restoreActiveTasks(); err != nil {
 		log.Printf("Error restoring timers: %v", err)
 	} else {
@@ -103,6 +104,7 @@ func (b *Bot) setBotCommands() {
 	}
 
 	config := tgbotapi.NewSetMyCommands(commands...)
+
 	_, err := b.api.Request(config)
 	if err != nil {
 		log.Printf("Failed to set bot commands: %v", err)
@@ -151,6 +153,7 @@ func (b *Bot) restoreActiveTasks() error {
 	log.Printf("Found %d groups with potential active tasks", len(groups))
 
 	restoredCount := 0
+
 	for _, groupID := range groups {
 		// Get all active tasks for this group
 		activeTasks, err := b.storage.GetActiveTasks(ctx, groupID)
@@ -174,10 +177,12 @@ func (b *Bot) restoreActiveTasks() error {
 
 			// Start a new timer with the remaining time
 			b.startTaskTimer(task.GroupID, task.TaskID, time.Duration(remaining)*time.Second)
+
 			restoredCount++
 		}
 	}
 
 	log.Printf("Restored %d active timers", restoredCount)
+
 	return nil
 }

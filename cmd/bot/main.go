@@ -32,8 +32,10 @@ func main() {
 
 	redisDBStr := os.Getenv("REDIS_DB")
 	redisDB := 0
+
 	if redisDBStr != "" {
 		var err error
+
 		redisDB, err = strconv.Atoi(redisDBStr)
 		if err != nil {
 			log.Printf("Warning: invalid REDIS_DB, using default: %v", err)
@@ -60,6 +62,7 @@ func main() {
 
 	// Start bot
 	log.Println("Starting bot...")
+
 	if err := b.Start(); err != nil {
 		log.Fatalf("Failed to start bot: %v", err)
 	}
