@@ -61,7 +61,7 @@ func (b *Bot) Start() error {
 	b.cancel = cancel
 
 	// Create update config
-	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig := tgbotapi.NewUpdate(-1)
 	updateConfig.Timeout = b.config.LongPollTimeout
 
 	updates := b.api.GetUpdatesChan(updateConfig)
