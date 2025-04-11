@@ -15,15 +15,16 @@ import (
 // Registers all command handlers
 func (b *Bot) registerHandlers() {
 	b.handlers = map[string]CommandHandler{
-		"start":  b.HandleStartCommand,
-		"help":   b.HandleHelpCommand,
-		"add":    b.HandleAddCommand,
-		"delete": b.HandleDeleteCommand,
-		"tasks":  b.HandleTasksCommand,
-		"status": b.HandleStatusCommand,
-		"lock":   b.HandleLockCommand,
-		"unlock": b.HandleUnlockCommand,
-		"cancel": b.HandleCancelCommand,
+		"start":   b.HandleStartCommand,
+		"help":    b.HandleHelpCommand,
+		"add":     b.HandleAddCommand,
+		"delete":  b.HandleDeleteCommand,
+		"tasks":   b.HandleTasksCommand,
+		"status":  b.HandleStatusCommand,
+		"lock":    b.HandleLockCommand,
+		"unlock":  b.HandleUnlockCommand,
+		"cancel":  b.HandleCancelCommand,
+		"api_key": b.HandleAPICommand,
 	}
 }
 

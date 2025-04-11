@@ -32,17 +32,17 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 		description = strings.Join(args[1:], " ") // FIXME " "
 	}
 
-	// Check if we're at the limit of tasks for this group
+	// Check if we're at the limit of chat tasks
 	count, err := b.storage.CountTasks(ctx, message.Chat.ID)
 	if err != nil {
 		return fmt.Errorf("failed to count tasks: %w", err)
 	}
 
-	if count >= helpers.MaxTasksPerGroup {
+	if count >= helpers.MaxTasksPerChat {
 		return b.sendErrorMessage(
 			message.Chat.ID,
 			message.MessageID,
-			fmt.Sprintf("Maximum number of tasks per group reached (%d)", helpers.MaxTasksPerGroup),
+			fmt.Sprintf("Maximum number of tasks per chat reached (%d)", helpers.MaxTasksPerChat),
 		)
 	}
 
@@ -73,7 +73,7 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 		ID:          taskID,
 		Name:        shortName,
 		Description: description,
-		GroupID:     message.Chat.ID,
+		ChatID:      message.Chat.ID,
 		IsLocked:    false,
 		LockReason:  "",
 	}
@@ -137,14 +137,14 @@ func (b *Bot) HandleDeleteCommand(ctx context.Context, message *tgbotapi.Message
 
 // Handles the /tasks command: /tasks
 func (b *Bot) HandleTasksCommand(ctx context.Context, message *tgbotapi.Message, args []string) error {
-	// Get all tasks for this group
+	// Get all chat tasks
 	tasks, err := b.storage.ListTasks(ctx, message.Chat.ID)
 	if err != nil {
 		return fmt.Errorf("failed to list tasks: %w", err)
 	}
 
 	if len(tasks) == 0 {
-		msg := tgbotapi.NewMessage(message.Chat.ID, "No tasks found for this group. Use /add to create a task")
+		msg := tgbotapi.NewMessage(message.Chat.ID, "No tasks found. Use /add to create a task")
 		msg.ReplyToMessageID = message.MessageID
 		_, err = b.api.Send(msg)
 

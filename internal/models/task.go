@@ -11,7 +11,7 @@ type Task struct {
 	Name        string `json:"name"`        // Friendly name for the task
 	Description string `json:"description"` // Optional description
 
-	GroupID int64 `json:"group_id"` // Telegram group ID
+	ChatID  int64 `json:"chat_id"`  // Telegram chat ID
 	OwnerID int64 `json:"owner_id"` // User ID of the person who currently owns the task
 
 	StartTime time.Time `json:"start_time"` // When the task was started
@@ -29,7 +29,7 @@ type Task struct {
 type ActiveTask struct {
 	TaskID        string    `json:"task_id"`         // ID of the task
 	UserID        int64     `json:"user_id"`         // ID of the user who started the task
-	GroupID       int64     `json:"group_id"`        // ID of the group where the task was started
+	ChatID        int64     `json:"chat_id"`         // ID of the chat where the task was started
 	StartTime     time.Time `json:"start_time"`      // When the task was started
 	EndTime       time.Time `json:"end_time"`        // When the task is scheduled to end
 	Duration      int       `json:"duration"`        // Duration in minutes

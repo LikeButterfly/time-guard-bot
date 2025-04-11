@@ -28,7 +28,7 @@ func (b *Bot) HandleHelpCommand(ctx context.Context, message *tgbotapi.Message, 
 	text += "<b>Task Management</b>:\n"
 	text += "/add {task_name} [task_desc] - Add a new task with a name and optional description\n"
 	text += "/delete {task_id} - Delete a task by ID\n"
-	text += "/tasks - List all tasks in this group\n"
+	text += "/tasks - List all tasks\n"
 	text += "/status [task_name] - Show status of all tasks or a specific task\n"
 	text += "/lock {task_id} [reason] - Lock a task, preventing it from being started\n"
 	text += "/unlock {task_id} - Unlock a previously locked task\n\n"

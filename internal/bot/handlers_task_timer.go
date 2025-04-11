@@ -11,7 +11,7 @@ import (
 
 	"time-guard-bot/internal/helpers"
 	"time-guard-bot/internal/models"
-	"time-guard-bot/internal/storage"
+	"time-guard-bot/internal/storage/redis"
 )
 
 // FIXME передавать сюда context?
@@ -76,11 +76,11 @@ func (b *Bot) handleTaskTimeout(chatID int64, taskID string) {
 	}
 }
 
-// Специальная функция для обработки команд вида /{time} {name}
+// Handles the command like /{time} {name}
 func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, duration int, taskName string) error {
 	task, err := b.storage.GetTaskByName(ctx, message.Chat.ID, taskName)
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if errors.Is(err, redis.ErrNotFound) {
 			return b.sendErrorMessage(
 				message.Chat.ID,
 				message.MessageID,
@@ -163,7 +163,7 @@ func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, 
 	activeTask := &models.ActiveTask{
 		TaskID:        task.ID,
 		UserID:        int64(message.From.ID),
-		GroupID:       message.Chat.ID,
+		ChatID:        message.Chat.ID,
 		StartTime:     startTime,
 		EndTime:       endTime,
 		Duration:      duration,
@@ -226,7 +226,7 @@ func (b *Bot) HandleCancelCommand(ctx context.Context, message *tgbotapi.Message
 		// Find the task by name
 		task, err := b.storage.GetTaskByName(ctx, message.Chat.ID, taskName)
 		if err != nil {
-			if errors.Is(err, storage.ErrNotFound) {
+			if errors.Is(err, redis.ErrNotFound) {
 				return b.sendErrorMessage(
 					message.Chat.ID,
 					message.MessageID,

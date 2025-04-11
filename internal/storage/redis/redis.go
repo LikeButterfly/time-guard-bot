@@ -15,17 +15,17 @@ var ErrNotFound = errors.New("not found")
 // Redis key prefixes
 const (
 	// Полная информация о task в JSON формате
-	taskIDPrefix = "task_id:%d:%s" // task_id:groupID:taskID
+	taskIDPrefix = "task_id:%d:%s" // task_id:chatID:taskID
 	// Индекс для быстрого обращения к задаче по task_name
-	taskNamePrefix = "task_name:%d:%s" // task_name:groupID:taskShort
+	taskNamePrefix = "task_name:%d:%s" // task_name:chatID:taskShort
 	// list id's всех задач группы
-	taskListKey = "tasks:%d" // tasks:groupID
+	taskListKey = "tasks:%d" // tasks:chatID
 	// Информация об активной задаче
-	activeTaskPrefix = "active:%d:%s" // active:groupID:taskID
+	activeTaskPrefix = "active:%d:%s" // active:chatID:taskID
 	// list id's всех активных задач группы
-	activeTaskListKey = "active:%d" // active:groupID
+	activeTaskListKey = "active:%d" // active:chatID
 	// list id's всех активных задач конкретного пользователя
-	userTasksKey = "user:%d:%d" // user:groupID:userID
+	userTasksKey = "user:%d:%d" // user:chatID:userID
 )
 
 // Implements Storage using Redis

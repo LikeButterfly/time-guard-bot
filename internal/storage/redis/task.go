@@ -10,7 +10,7 @@ import (
 	"time-guard-bot/internal/models"
 )
 
-// Добавляет новый task
+// Adds a new task
 func (rs *Storage) AddTask(ctx context.Context, task *models.Task) error {
 	// TODO do here gen task id
 	// мб тут и проверку, сущ-ет ли задача с таким же Name
@@ -24,17 +24,17 @@ func (rs *Storage) AddTask(ctx context.Context, task *models.Task) error {
 	pipe := rs.client.TxPipeline()
 
 	// Store task by ID
-	taskIDKey := fmt.Sprintf(taskIDPrefix, task.GroupID, task.ID)
+	taskIDKey := fmt.Sprintf(taskIDPrefix, task.ChatID, task.ID)
 	pipe.Set(ctx, taskIDKey, taskData, 0)
 
 	// Create index by name for quick lookup
 	if task.Name != "" {
-		taskShortKey := fmt.Sprintf(taskNamePrefix, task.GroupID, task.Name)
+		taskShortKey := fmt.Sprintf(taskNamePrefix, task.ChatID, task.Name)
 		pipe.Set(ctx, taskShortKey, task.ID, 0)
 	}
 
-	// Add to group's task list
-	taskListK := fmt.Sprintf(taskListKey, task.GroupID)
+	// Add to chat's task list
+	taskListK := fmt.Sprintf(taskListKey, task.ChatID)
 	pipe.SAdd(ctx, taskListK, task.ID)
 
 	// Execute transaction
@@ -46,9 +46,9 @@ func (rs *Storage) AddTask(ctx context.Context, task *models.Task) error {
 	return nil
 }
 
-// Извлекает task по id
-func (rs *Storage) GetTask(ctx context.Context, groupID int64, taskID string) (*models.Task, error) {
-	taskKey := fmt.Sprintf(taskIDPrefix, groupID, taskID)
+// Retrieves the task by id
+func (rs *Storage) GetTask(ctx context.Context, chatID int64, taskID string) (*models.Task, error) {
+	taskKey := fmt.Sprintf(taskIDPrefix, chatID, taskID)
 
 	data, err := rs.client.Get(ctx, taskKey).Bytes()
 	if err != nil {
@@ -67,10 +67,10 @@ func (rs *Storage) GetTask(ctx context.Context, groupID int64, taskID string) (*
 	return task, nil
 }
 
-// Обновляет существующий task
+// Updates an existing task
 func (rs *Storage) UpdateTask(ctx context.Context, task *models.Task) error {
 	// Check if task exists
-	key := fmt.Sprintf(taskIDPrefix, task.GroupID, task.ID)
+	key := fmt.Sprintf(taskIDPrefix, task.ChatID, task.ID)
 
 	exists, err := rs.client.Exists(ctx, key).Result()
 	if err != nil {
@@ -108,13 +108,13 @@ func (rs *Storage) UpdateTask(ctx context.Context, task *models.Task) error {
 	if existingTask.Name != task.Name {
 		// Remove old index
 		if existingTask.Name != "" {
-			oldShortKey := fmt.Sprintf(taskNamePrefix, task.GroupID, existingTask.Name)
+			oldShortKey := fmt.Sprintf(taskNamePrefix, task.ChatID, existingTask.Name)
 			pipe.Del(ctx, oldShortKey)
 		}
 
 		// Add new index
 		if task.Name != "" {
-			newShortKey := fmt.Sprintf(taskNamePrefix, task.GroupID, task.Name)
+			newShortKey := fmt.Sprintf(taskNamePrefix, task.ChatID, task.Name)
 			pipe.Set(ctx, newShortKey, task.ID, 0)
 		}
 	}
@@ -128,10 +128,10 @@ func (rs *Storage) UpdateTask(ctx context.Context, task *models.Task) error {
 	return nil
 }
 
-// Извлекает task по name
-func (rs *Storage) GetTaskByName(ctx context.Context, groupID int64, name string) (*models.Task, error) {
+// Retrieves task by name
+func (rs *Storage) GetTaskByName(ctx context.Context, chatID int64, name string) (*models.Task, error) {
 	// Get task ID from name index
-	nameKey := fmt.Sprintf(taskNamePrefix, groupID, name)
+	nameKey := fmt.Sprintf(taskNamePrefix, chatID, name)
 
 	taskIDResult, err := rs.client.Get(ctx, nameKey).Result()
 	if err != nil {
@@ -143,13 +143,13 @@ func (rs *Storage) GetTaskByName(ctx context.Context, groupID int64, name string
 	}
 
 	// Get task by ID
-	return rs.GetTask(ctx, groupID, taskIDResult)
+	return rs.GetTask(ctx, chatID, taskIDResult)
 }
 
-// Удаляет task по id
-func (rs *Storage) DeleteTask(ctx context.Context, groupID int64, taskID string) error {
+// Deletes a task by id
+func (rs *Storage) DeleteTask(ctx context.Context, chatID int64, taskID string) error {
 	// Get task to retrieve name for index deletion
-	task, err := rs.GetTask(ctx, groupID, taskID)
+	task, err := rs.GetTask(ctx, chatID, taskID)
 	if err != nil {
 		return err
 	}
@@ -158,17 +158,17 @@ func (rs *Storage) DeleteTask(ctx context.Context, groupID int64, taskID string)
 	pipe := rs.client.TxPipeline()
 
 	// Delete task data
-	key := fmt.Sprintf(taskIDPrefix, groupID, taskID)
+	key := fmt.Sprintf(taskIDPrefix, chatID, taskID)
 	pipe.Del(ctx, key)
 
 	// Delete name index
 	if task.Name != "" {
-		shortKey := fmt.Sprintf(taskNamePrefix, groupID, task.Name)
+		shortKey := fmt.Sprintf(taskNamePrefix, chatID, task.Name)
 		pipe.Del(ctx, shortKey)
 	}
 
 	// Remove from task list
-	taskListK := fmt.Sprintf(taskListKey, groupID)
+	taskListK := fmt.Sprintf(taskListKey, chatID)
 	pipe.SRem(ctx, taskListK, taskID)
 
 	// Execute transaction
@@ -180,10 +180,10 @@ func (rs *Storage) DeleteTask(ctx context.Context, groupID int64, taskID string)
 	return nil
 }
 
-// Извлекает все tasks группы
-func (rs *Storage) ListTasks(ctx context.Context, groupID int64) ([]*models.Task, error) {
-	// Get all task IDs for the group
-	taskListK := fmt.Sprintf(taskListKey, groupID)
+// Retrieves all tasks of chat
+func (rs *Storage) ListTasks(ctx context.Context, chatID int64) ([]*models.Task, error) {
+	// Get all task IDs for the chat
+	taskListK := fmt.Sprintf(taskListKey, chatID)
 
 	taskIDs, err := rs.client.SMembers(ctx, taskListK).Result()
 	if err != nil {
@@ -199,7 +199,7 @@ func (rs *Storage) ListTasks(ctx context.Context, groupID int64) ([]*models.Task
 	tasks := make([]*models.Task, 0, len(taskIDs))
 
 	for _, id := range taskIDs {
-		task, err := rs.GetTask(ctx, groupID, id)
+		task, err := rs.GetTask(ctx, chatID, id)
 		if err != nil {
 			if errors.Is(err, ErrNotFound) {
 				// Skip not found tasks (should not happen in normal operation)
@@ -215,9 +215,9 @@ func (rs *Storage) ListTasks(ctx context.Context, groupID int64) ([]*models.Task
 	return tasks, nil
 }
 
-// Считает кол-во tasks группы
-func (rs *Storage) CountTasks(ctx context.Context, groupID int64) (int64, error) {
-	taskListK := fmt.Sprintf(taskListKey, groupID)
+// Counts the number of tasks in chat
+func (rs *Storage) CountTasks(ctx context.Context, chatID int64) (int64, error) {
+	taskListK := fmt.Sprintf(taskListKey, chatID)
 
 	count, err := rs.client.SCard(ctx, taskListK).Result()
 	if err != nil {

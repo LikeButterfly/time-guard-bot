@@ -83,7 +83,7 @@ func (b *Bot) getTaskStatus(ctx context.Context, message *tgbotapi.Message, task
 	return err
 }
 
-// Get status of all tasks in a group
+// Get status of all tasks in a chat
 func (b *Bot) getAllTasksStatus(ctx context.Context, message *tgbotapi.Message) error {
 	tasks, err := b.storage.ListTasks(ctx, message.Chat.ID)
 	if err != nil {
@@ -94,14 +94,14 @@ func (b *Bot) getAllTasksStatus(ctx context.Context, message *tgbotapi.Message) 
 		return b.sendErrorMessage(
 			message.Chat.ID,
 			message.MessageID,
-			"No tasks found for this chat",
+			"No tasks found",
 		)
 	}
 
 	// Get active tasks
 	activeTasks, err := b.storage.GetActiveTasks(ctx, message.Chat.ID)
 	if err != nil {
-		log.Printf("Failed to get active tasks: %v", err)
+		log.Printf("Failed to get active tasks: %v", err) // TODO уточнить
 
 		activeTasks = []*models.ActiveTask{} // Empty slice as fallback
 	}

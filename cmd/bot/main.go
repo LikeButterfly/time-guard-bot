@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 
+	"time-guard-bot/internal/api"
 	"time-guard-bot/internal/bot"
 	"time-guard-bot/internal/storage"
 )
@@ -42,6 +43,11 @@ func main() {
 		}
 	}
 
+	apiAddr := os.Getenv("API_ADDR")
+	if apiAddr == "" {
+		apiAddr = ":8080"
+	}
+
 	// Create Redis storage
 	redisStorage, err := storage.NewRedisStorage(redisAddr, redisPassword, redisDB)
 	if err != nil {
@@ -60,6 +66,17 @@ func main() {
 		log.Fatalf("Failed to create bot: %v", err)
 	}
 
+	// Create API server
+	apiConfig := &api.Config{
+		Addr: apiAddr,
+	}
+	apiServer := api.NewServer(apiConfig, redisStorage)
+
+	// Start API server
+	if err := apiServer.Start(); err != nil {
+		log.Fatalf("Failed to start API server: %v", err)
+	}
+
 	// Start bot
 	log.Println("Starting bot...")
 
@@ -74,6 +91,14 @@ func main() {
 	// Blocking execution until a signal is received
 	sig := <-sigCh
 	log.Printf("Received signal %v, shutting down...", sig)
+
+	// Stop API server
+	if err := apiServer.Stop(); err != nil {
+		log.Printf("Error stopping API server: %v", err)
+	}
+
+	// Stop bot
+	b.Stop()
 
 	log.Println("Bot stopped")
 }

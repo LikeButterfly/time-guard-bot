@@ -13,10 +13,10 @@ const (
 	// Characters used in task IDs
 	TaskIDChars = "abcdefghijklmnopqrstuvwxyz0123456789"
 
-	// Maximum number of tasks per group
-	MaxTasksPerGroup = 16
+	// Maximum number of tasks per chat
+	MaxTasksPerChat = 16
 
-	// Maximum number of tasks per user in a group
+	// Maximum number of tasks per user in a chat
 	MaxTasksPerUser = 4
 
 	// Maximum allowed task duration in minutes (24 hours)
