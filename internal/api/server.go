@@ -48,8 +48,12 @@ func NewServer(config *Config, s storage.Storage) *Server {
 func (s *Server) Start() error {
 	mux := http.NewServeMux()
 
+	// API endpoints
 	mux.HandleFunc("/api/task/status", s.authMiddleware(s.handleTaskStatus))
 	mux.HandleFunc("/api/task/list", s.authMiddleware(s.handleTaskList))
+
+	// Register Swagger routes
+	RegisterSwaggerRoutes(mux)
 
 	// Create HTTP server
 	s.server = &http.Server{
@@ -59,6 +63,7 @@ func (s *Server) Start() error {
 
 	go func() {
 		log.Printf("API server starting on %s", s.addr)
+		log.Printf("Swagger UI available at http://%s/swagger/index.html", s.addr)
 
 		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("API server error: %v", err)

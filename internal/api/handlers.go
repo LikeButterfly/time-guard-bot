@@ -8,7 +8,20 @@ import (
 	"time-guard-bot/internal/storage/redis"
 )
 
-// Handles the task status endpoint
+// @Summary Get task status
+// @Description Returns the status of a specific task
+// @ID get-task-status
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Param task_id query string true "Task ID"
+// @Success 200 {object} models.TaskStatusResponse
+// @Failure 400 {object} models.ErrorResponse "Missing task_id parameter"
+// @Failure 401 {object} models.ErrorResponse "Unauthorized - invalid API key"
+// @Failure 404 {object} models.ErrorResponse "Task not found"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Security ApiKeyAuth
+// @Router /task/status [get]
 func (s *Server) handleTaskStatus(w http.ResponseWriter, r *http.Request) {
 	// Only allow GET requests
 	if r.Method != http.MethodGet {
@@ -78,7 +91,18 @@ func (s *Server) handleTaskStatus(w http.ResponseWriter, r *http.Request) {
 	sendJSON(w, response)
 }
 
-// Handles the task list endpoint - returns all chat tasks
+// @Summary Get list of tasks
+// @Description Returns a list of all chat tasks
+// @ID get-task-list
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.TaskListResponse
+// @Failure 401 {object} models.ErrorResponse "Unauthorized - invalid API key"
+// @Failure 404 {object} models.ErrorResponse "Chat not found or has no tasks"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Security ApiKeyAuth
+// @Router /task/list [get]
 func (s *Server) handleTaskList(w http.ResponseWriter, r *http.Request) {
 	// Only allow GET requests
 	if r.Method != http.MethodGet {

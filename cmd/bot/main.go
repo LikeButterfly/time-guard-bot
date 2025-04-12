@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 
+	_ "time-guard-bot/docs/swagger"
 	"time-guard-bot/internal/api"
 	"time-guard-bot/internal/bot"
 	"time-guard-bot/internal/storage"
