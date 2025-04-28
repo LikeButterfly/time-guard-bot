@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Task represents a task in the system
+// Represents a task in the system
 type Task struct {
 	ID          string `json:"id"`          // Short unique identifier for the task
 	Name        string `json:"name"`        // Friendly name for the task
@@ -52,9 +52,8 @@ func UnmarshalTask(data []byte) (*Task, error) {
 	return &task, nil
 }
 
-// TimeRemaining returns the time remaining in seconds
-func (t *Task) TimeRemaining() int64 {
-	endTime := t.StartTime.Add(time.Duration(t.Duration) * time.Minute)
+func calcTimeRemaining(startTime time.Time, durationMin int) int64 {
+	endTime := startTime.Add(time.Duration(durationMin) * time.Minute)
 
 	remaining := endTime.Unix() - time.Now().Unix()
 	if remaining < 0 {
@@ -64,15 +63,12 @@ func (t *Task) TimeRemaining() int64 {
 	return remaining
 }
 
-// TimeRemaining returns the time remaining in seconds
+// Returns the time remaining in seconds
+func (t *Task) TimeRemaining() int64 {
+	return calcTimeRemaining(t.StartTime, t.Duration)
+}
+
+// Returns the time remaining in seconds
 func (t *ActiveTask) TimeRemaining() int64 {
-	// FIXME? через Until?
-	endTime := t.StartTime.Add(time.Duration(t.Duration) * time.Minute)
-
-	remaining := endTime.Unix() - time.Now().Unix()
-	if remaining < 0 {
-		return 0
-	}
-
-	return remaining
+	return calcTimeRemaining(t.StartTime, t.Duration)
 }

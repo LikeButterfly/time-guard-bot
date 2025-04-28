@@ -8,6 +8,7 @@ import (
 	"time-guard-bot/internal/storage/redis"
 )
 
+// FIXME...
 // Storage interface for data storage
 type Storage interface {
 	// Task operations

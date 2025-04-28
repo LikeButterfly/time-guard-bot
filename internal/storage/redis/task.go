@@ -12,7 +12,7 @@ import (
 
 // Adds a new task
 func (rs *Storage) AddTask(ctx context.Context, task *models.Task) error {
-	// TODO do here gen task id
+	// mb do here gen task id
 	// мб тут и проверку, сущ-ет ли задача с таким же Name
 	// Marshal task to JSON
 	taskData, err := task.Marshal()

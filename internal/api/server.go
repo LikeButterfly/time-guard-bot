@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"time-guard-bot/internal/helpers"
 	"time-guard-bot/internal/storage"
 )
 
@@ -101,7 +102,7 @@ func (s *Server) authMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		apiKey := parts[1]
 
-		chatID, err := ExtractChatID(r.Context(), apiKey)
+		chatID, err := helpers.ExtractChatID(apiKey)
 		if err != nil {
 			log.Printf("Error verifying API key: %v", err)
 			sendJSONError(w, "Internal server error", http.StatusInternalServerError)
