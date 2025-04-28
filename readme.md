@@ -1,6 +1,22 @@
 # Time Guard Bot
 
-Telegram Bot для управления временем задач
+Telegram Bot for managing task time
+
+## Available commands
+
+Task Management:
+
+- `/add {task_name} [task_desc]` - Add a new task with a name and optional description
+- `/delete {task_id}` - Delete a task by ID
+- `/tasks` - List all tasks
+- `/status [task_name]` - Show status of all tasks or a specific task
+- `/lock {task_id} [reason]` - Lock a task, preventing it from being started
+- `/unlock {task_id}` - Unlock a previously locked task
+
+Time Tracking:
+
+- `/{minutes} {task_name}` - Start a timer for a task (e.g., '/30 coding')
+- `/cancel [task_name]` - Cancel specified timer (defaults to latest)
 
 ## API Documentation
 
