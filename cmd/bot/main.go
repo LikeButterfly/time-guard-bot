@@ -9,6 +9,8 @@ import (
 
 	"github.com/joho/godotenv"
 
+	_ "time-guard-bot/docs/swagger"
+	"time-guard-bot/internal/api"
 	"time-guard-bot/internal/bot"
 	"time-guard-bot/internal/storage"
 )
@@ -32,12 +34,19 @@ func main() {
 
 	redisDBStr := os.Getenv("REDIS_DB")
 	redisDB := 0
+
 	if redisDBStr != "" {
 		var err error
+
 		redisDB, err = strconv.Atoi(redisDBStr)
 		if err != nil {
 			log.Printf("Warning: invalid REDIS_DB, using default: %v", err)
 		}
+	}
+
+	apiAddr := os.Getenv("API_ADDR")
+	if apiAddr == "" {
+		apiAddr = ":8080"
 	}
 
 	// Create Redis storage
@@ -53,13 +62,25 @@ func main() {
 	}
 
 	// Create bot
-	b, err := bot.NewBot(botConfig)
+	b, err := bot.NewBot(botConfig, redisStorage)
 	if err != nil {
 		log.Fatalf("Failed to create bot: %v", err)
 	}
 
+	// Create API server
+	apiConfig := &api.Config{
+		Addr: apiAddr,
+	}
+	apiServer := api.NewServer(apiConfig, redisStorage)
+
+	// Start API server
+	if err := apiServer.Start(); err != nil {
+		log.Fatalf("Failed to start API server: %v", err)
+	}
+
 	// Start bot
 	log.Println("Starting bot...")
+
 	if err := b.Start(); err != nil {
 		log.Fatalf("Failed to start bot: %v", err)
 	}
@@ -71,6 +92,14 @@ func main() {
 	// Blocking execution until a signal is received
 	sig := <-sigCh
 	log.Printf("Received signal %v, shutting down...", sig)
+
+	// Stop API server
+	if err := apiServer.Stop(); err != nil {
+		log.Printf("Error stopping API server: %v", err)
+	}
+
+	// Stop bot
+	b.Stop()
 
 	log.Println("Bot stopped")
 }

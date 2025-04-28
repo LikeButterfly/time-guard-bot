@@ -1,8 +1,12 @@
-.PHONY:
+.PHONY: build run swagger
 .SILENT:
 
 build:
-	go build -o ./.bin/bot cmd/bot/main.go
+	go build -o time-guard-bot.exe ./cmd/bot
 
 run: build
-	./.bin/bot
+	./time-guard-bot.exe
+
+swagger:
+	go install github.com/swaggo/swag/cmd/swag@latest
+	swag init -g internal/api/docs.go -output ./docs/swagger --parseDependency

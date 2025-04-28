@@ -1,13 +1,13 @@
-name: Pre-commit
+name: Linting
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, dev ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, dev ]
 
 jobs:
-  pre-commit:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -16,9 +16,6 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: '1.23'
-
-      - name: Install goimports
-        run: go install golang.org/x/tools/cmd/goimports@latest
 
       - name: Install golangci-lint
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.63.4
@@ -29,13 +26,5 @@ jobs:
       - name: Vendor dependencies
         run: go mod vendor
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install pre-commit
-        run: pip install pre-commit
-
-      - name: Run pre-commit
-        run: pre-commit run --all-files
+      - name: Run golangci-lint
+        run: golangci-lint run ./...

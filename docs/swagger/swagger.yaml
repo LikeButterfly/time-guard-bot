@@ -1,0 +1,118 @@
+basePath: /api
+definitions:
+  time-guard-bot_internal_models.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  time-guard-bot_internal_models.TaskInfo:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      lock_reason:
+        description: Only present when status is "locked"
+        type: string
+      status:
+        description: '"free", "busy", "locked"'
+        type: string
+    type: object
+  time-guard-bot_internal_models.TaskListResponse:
+    additionalProperties:
+      $ref: '#/definitions/time-guard-bot_internal_models.TaskInfo'
+    type: object
+  time-guard-bot_internal_models.TaskStatusResponse:
+    properties:
+      lock_reason:
+        description: Reason for lock if status is "locked"
+        type: string
+      status:
+        description: '"free", "busy", "locked"'
+        type: string
+      task_name:
+        description: Name of the task
+        type: string
+    type: object
+info:
+  contact: {}
+  title: Time Guard Bot API
+  version: "1.0"
+paths:
+  /task/list:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of all chat tasks
+      operationId: get-task-list
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/time-guard-bot_internal_models.TaskListResponse'
+        "401":
+          description: Unauthorized - invalid API key
+          schema:
+            $ref: '#/definitions/time-guard-bot_internal_models.ErrorResponse'
+        "404":
+          description: Chat not found or has no tasks
+          schema:
+            $ref: '#/definitions/time-guard-bot_internal_models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/time-guard-bot_internal_models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get list of tasks
+      tags:
+      - tasks
+  /task/status:
+    get:
+      consumes:
+      - application/json
+      description: Returns the status of a specific task
+      operationId: get-task-status
+      parameters:
+      - description: Task ID
+        in: query
+        name: task_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/time-guard-bot_internal_models.TaskStatusResponse'
+        "400":
+          description: Missing task_id parameter
+          schema:
+            $ref: '#/definitions/time-guard-bot_internal_models.ErrorResponse'
+        "401":
+          description: Unauthorized - invalid API key
+          schema:
+            $ref: '#/definitions/time-guard-bot_internal_models.ErrorResponse'
+        "404":
+          description: Task not found
+          schema:
+            $ref: '#/definitions/time-guard-bot_internal_models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/time-guard-bot_internal_models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get task status
+      tags:
+      - tasks
+securityDefinitions:
+  ApiKeyAuth:
+    description: 'API key authentication, format: "Bearer {api_key}"'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

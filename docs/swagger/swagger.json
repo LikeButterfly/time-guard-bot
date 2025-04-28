@@ -1,0 +1,180 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Time Guard Bot API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api",
+    "paths": {
+        "/task/list": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns a list of all chat tasks",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Get list of tasks",
+                "operationId": "get-task-list",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/time-guard-bot_internal_models.TaskListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid API key",
+                        "schema": {
+                            "$ref": "#/definitions/time-guard-bot_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Chat not found or has no tasks",
+                        "schema": {
+                            "$ref": "#/definitions/time-guard-bot_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/time-guard-bot_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/task/status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Returns the status of a specific task",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Get task status",
+                "operationId": "get-task-status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Task ID",
+                        "name": "task_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/time-guard-bot_internal_models.TaskStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing task_id parameter",
+                        "schema": {
+                            "$ref": "#/definitions/time-guard-bot_internal_models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - invalid API key",
+                        "schema": {
+                            "$ref": "#/definitions/time-guard-bot_internal_models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Task not found",
+                        "schema": {
+                            "$ref": "#/definitions/time-guard-bot_internal_models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/time-guard-bot_internal_models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "time-guard-bot_internal_models.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "time-guard-bot_internal_models.TaskInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lock_reason": {
+                    "description": "Only present when status is \"locked\"",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "\"free\", \"busy\", \"locked\"",
+                    "type": "string"
+                }
+            }
+        },
+        "time-guard-bot_internal_models.TaskListResponse": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/time-guard-bot_internal_models.TaskInfo"
+            }
+        },
+        "time-guard-bot_internal_models.TaskStatusResponse": {
+            "type": "object",
+            "properties": {
+                "lock_reason": {
+                    "description": "Reason for lock if status is \"locked\"",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "\"free\", \"busy\", \"locked\"",
+                    "type": "string"
+                },
+                "task_name": {
+                    "description": "Name of the task",
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "API key authentication, format: \"Bearer {api_key}\"",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}
