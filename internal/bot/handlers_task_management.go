@@ -21,8 +21,8 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 	}
 
 	// Check if the name is valid
-	shortName := args[0]
-	if err := helpers.ValidateShortName(shortName); err != nil {
+	taskName := args[0]
+	if err := helpers.ValidateTaskName(taskName); err != nil {
 		return b.sendErrorMessage(message.Chat.ID, message.MessageID, fmt.Sprintf("Invalid task name: %s", err.Error()))
 	}
 
@@ -47,7 +47,7 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 	}
 
 	// Check if a task with this name already exists
-	_, err = b.storage.GetTaskByName(ctx, message.Chat.ID, shortName)
+	_, err = b.storage.GetTaskByName(ctx, message.Chat.ID, taskName)
 	if err != nil {
 		if errors.Is(err, redis.ErrNotFound) {
 			// Continue
@@ -58,7 +58,7 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 		return b.sendErrorMessage(
 			message.Chat.ID,
 			message.MessageID,
-			fmt.Sprintf("A task with name *%s* already exists", shortName),
+			fmt.Sprintf("A task with name *%s* already exists", taskName),
 		)
 	}
 
@@ -71,7 +71,7 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 	// Create task
 	task := &models.Task{
 		ID:          taskID,
-		Name:        shortName,
+		Name:        taskName,
 		Description: description,
 		ChatID:      message.Chat.ID,
 		IsLocked:    false,
@@ -83,7 +83,7 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 		return fmt.Errorf("failed to add task: %w", err)
 	}
 
-	text := fmt.Sprintf("Task added successfully!\n\nName: *%s*\nID: `%s`", shortName, taskID)
+	text := fmt.Sprintf("Task added successfully!\n\nName: *%s*\nID: `%s`", taskName, taskID)
 	if description != "" {
 		text += fmt.Sprintf("\nDescription: %s", description)
 	}

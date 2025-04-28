@@ -29,8 +29,8 @@ func (rs *Storage) AddTask(ctx context.Context, task *models.Task) error {
 
 	// Create index by name for quick lookup
 	if task.Name != "" {
-		taskShortKey := fmt.Sprintf(taskNamePrefix, task.ChatID, task.Name)
-		pipe.Set(ctx, taskShortKey, task.ID, 0)
+		taskNameKey := fmt.Sprintf(taskNamePrefix, task.ChatID, task.Name)
+		pipe.Set(ctx, taskNameKey, task.ID, 0)
 	}
 
 	// Add to chat's task list
@@ -108,14 +108,14 @@ func (rs *Storage) UpdateTask(ctx context.Context, task *models.Task) error {
 	if existingTask.Name != task.Name {
 		// Remove old index
 		if existingTask.Name != "" {
-			oldShortKey := fmt.Sprintf(taskNamePrefix, task.ChatID, existingTask.Name)
-			pipe.Del(ctx, oldShortKey)
+			oldTaskNameKey := fmt.Sprintf(taskNamePrefix, task.ChatID, existingTask.Name)
+			pipe.Del(ctx, oldTaskNameKey)
 		}
 
 		// Add new index
 		if task.Name != "" {
-			newShortKey := fmt.Sprintf(taskNamePrefix, task.ChatID, task.Name)
-			pipe.Set(ctx, newShortKey, task.ID, 0)
+			newTaskNameKey := fmt.Sprintf(taskNamePrefix, task.ChatID, task.Name)
+			pipe.Set(ctx, newTaskNameKey, task.ID, 0)
 		}
 	}
 
@@ -163,8 +163,8 @@ func (rs *Storage) DeleteTask(ctx context.Context, chatID int64, taskID string) 
 
 	// Delete name index
 	if task.Name != "" {
-		shortKey := fmt.Sprintf(taskNamePrefix, chatID, task.Name)
-		pipe.Del(ctx, shortKey)
+		taskNameKey := fmt.Sprintf(taskNamePrefix, chatID, task.Name)
+		pipe.Del(ctx, taskNameKey)
 	}
 
 	// Remove from task list

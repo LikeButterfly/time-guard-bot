@@ -28,7 +28,7 @@ func (b *Bot) HandleStatusCommand(ctx context.Context, message *tgbotapi.Message
 
 // Get status of a specific task
 func (b *Bot) getTaskStatus(ctx context.Context, message *tgbotapi.Message, taskName string) error {
-	// Try to get by short name
+	// Try to get by name
 	task, err := b.storage.GetTaskByName(ctx, message.Chat.ID, taskName)
 	if err != nil {
 		if errors.Is(err, redis.ErrNotFound) {

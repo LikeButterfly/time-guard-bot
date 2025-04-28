@@ -17,7 +17,7 @@ const (
 	// Полная информация о task в JSON формате
 	taskIDPrefix = "task_id:%d:%s" // task_id:chatID:taskID
 	// Индекс для быстрого обращения к задаче по task_name
-	taskNamePrefix = "task_name:%d:%s" // task_name:chatID:taskShort
+	taskNamePrefix = "task_name:%d:%s" // task_name:chatID:taskName
 	// list id's всех задач группы
 	taskListKey = "tasks:%d" // tasks:chatID
 	// Информация об активной задаче
