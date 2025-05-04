@@ -10,8 +10,7 @@ import (
 func (b *Bot) HandleStartCommand(ctx context.Context, message *tgbotapi.Message, args []string) error {
 	text := "👋 Hello! I'm TimeGuardBot - a bot for managing task time\n\n"
 
-	text += "This bot helps your team track and manage time spent on various tasks. "
-	text += "It allows you to control who's working on what and for how long, improving productivity and coordination\n\n"
+	text += "This bot helps your team track and manage time spent on various tasks\n\n"
 
 	text += "Use /help to get a list of available commands"
 
@@ -37,7 +36,7 @@ func (b *Bot) HandleHelpCommand(ctx context.Context, message *tgbotapi.Message, 
 	text += "/{minutes} {task_name} - Start a timer for a task (e.g., '/30 coding')\n"
 	text += "/cancel [task_name] - Cancel specified timer (defaults to latest)\n\n"
 
-	text += "<b>Notes</b>:\n"
+	text += "<b>Limits</b>:\n"
 	text += "- Maximum task duration: 1440 minutes (24 hours)\n" // FIXME
 	text += "- Maximum active tasks per user: 4\n"               // FIXME
 	text += "- Maximum tasks: 16"                                // FIXME
