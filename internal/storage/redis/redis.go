@@ -26,6 +26,8 @@ const (
 	activeTaskListKey = "active:%d" // active:chatID
 	// list id's всех активных задач конкретного пользователя
 	userTasksKey = "user:%d:%d" // user:chatID:userID
+	// Set всех чатов с активными задачами
+	activeChatsKey = "active_chats"
 )
 
 // Implements Storage using Redis

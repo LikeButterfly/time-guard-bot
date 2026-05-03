@@ -67,6 +67,18 @@ func (rs *Storage) GetTask(ctx context.Context, chatID int64, taskID string) (*m
 	return task, nil
 }
 
+// Checks if a task exists by id
+func (rs *Storage) TaskExists(ctx context.Context, chatID int64, taskID string) (bool, error) {
+	taskKey := fmt.Sprintf(taskIDPrefix, chatID, taskID)
+
+	exists, err := rs.client.Exists(ctx, taskKey).Result()
+	if err != nil {
+		return false, fmt.Errorf("failed to check if task exists: %w", err)
+	}
+
+	return exists > 0, nil
+}
+
 // Updates an existing task
 func (rs *Storage) UpdateTask(ctx context.Context, task *models.Task) error {
 	// Check if task exists

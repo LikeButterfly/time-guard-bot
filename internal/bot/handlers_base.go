@@ -2,8 +2,11 @@ package bot
 
 import (
 	"context"
+	"fmt"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
+	"time-guard-bot/internal/helpers"
 )
 
 // Handles the /start command
@@ -37,9 +40,9 @@ func (b *Bot) HandleHelpCommand(ctx context.Context, message *tgbotapi.Message, 
 	text += "/cancel [task_name] - Cancel specified timer (defaults to latest)\n\n"
 
 	text += "<b>Limits</b>:\n"
-	text += "- Maximum task duration: 1440 minutes (24 hours)\n" // FIXME
-	text += "- Maximum active tasks per user: 4\n"               // FIXME
-	text += "- Maximum tasks: 16"                                // FIXME
+	text += fmt.Sprintf("- Maximum task duration: %d minutes (%.1f hours)\n", helpers.MaxTaskDuration, float64(helpers.MaxTaskDuration)/60)
+	text += fmt.Sprintf("- Maximum active tasks per user: %d\n", helpers.MaxTasksPerUser)
+	text += fmt.Sprintf("- Maximum tasks: %d", helpers.MaxTasksPerChat)
 
 	msg := tgbotapi.NewMessage(message.Chat.ID, text)
 	msg.ParseMode = tgbotapi.ModeHTML

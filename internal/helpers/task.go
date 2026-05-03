@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 )
 
@@ -26,8 +27,32 @@ const (
 	MinTaskDuration = 1
 )
 
-// Generates a random task ID of specified length // FIXME!
-func GenerateTaskID(length int) (string, error) {
+// Generates a random task ID of specified length with uniqueness check
+func GenerateUniqueTaskID(length int, existsFunc func(string) (bool, error)) (string, error) {
+	const maxRetries = 10
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		id, err := generateRandomID(length)
+		if err != nil {
+			return "", fmt.Errorf("failed to generate ID: %w", err)
+		}
+
+		// Check if ID already exists
+		exists, err := existsFunc(id)
+		if err != nil {
+			return "", fmt.Errorf("failed to check ID uniqueness: %w", err)
+		}
+
+		if !exists {
+			return id, nil
+		}
+	}
+
+	return "", fmt.Errorf("failed to generate unique ID after %d attempts", maxRetries)
+}
+
+// Generates a random task ID of specified length (without uniqueness check)
+func generateRandomID(length int) (string, error) {
 	id := make([]byte, length)
 	charCount := big.NewInt(int64(len(TaskIDChars)))
 

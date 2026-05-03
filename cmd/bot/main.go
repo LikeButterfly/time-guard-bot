@@ -17,7 +17,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Can't load .env file: %v", err)
+		log.Printf("Warning: .env file not found, using system environment variables: %v", err)
 	}
 
 	tgToken := os.Getenv("TELEGRAM_TOKEN")
@@ -46,7 +46,7 @@ func main() {
 
 	apiAddr := os.Getenv("API_ADDR")
 	if apiAddr == "" {
-		apiAddr = ":8080"
+		apiAddr = "0.0.0.0:8080"
 	}
 
 	// Create Redis storage

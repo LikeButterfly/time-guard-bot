@@ -63,7 +63,9 @@ func (b *Bot) HandleAddCommand(ctx context.Context, message *tgbotapi.Message, a
 	}
 
 	// Generate a unique ID for the task
-	taskID, err := helpers.GenerateTaskID(helpers.TaskIDLength)
+	taskID, err := helpers.GenerateUniqueTaskID(helpers.TaskIDLength, func(id string) (bool, error) {
+		return b.storage.TaskExists(ctx, message.Chat.ID, id)
+	})
 	if err != nil {
 		return fmt.Errorf("failed to generate task ID: %w", err)
 	}

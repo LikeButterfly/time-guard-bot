@@ -20,9 +20,11 @@ type Bot struct {
 	handlers map[string]CommandHandler
 	ctx      context.Context
 	cancel   context.CancelFunc
-	// Управление таймерами
+
 	timers   map[string]*time.Timer
 	timersMx sync.RWMutex
+
+	wg sync.WaitGroup
 }
 
 // Represents bot configuration
@@ -85,14 +87,26 @@ func (b *Bot) Start() error {
 
 // Stops the bot
 func (b *Bot) Stop() {
+	log.Println("Stopping bot gracefully...")
+
 	if b.cancel != nil {
 		b.cancel()
 	}
+
+	// Stopping all timers
+	b.timersMx.Lock()
+	for _, timer := range b.timers {
+		timer.Stop()
+	}
+	b.timersMx.Unlock()
+
+	// Waiting for the completion of all goroutines
+	b.wg.Wait()
+	log.Println("All goroutines stopped")
 }
 
 // Sets the bot commands in Telegram
 func (b *Bot) setBotCommands() {
-	// Специально не добавляю start и help, чтобы было не так много команд (будет еще больше)
 	commands := []tgbotapi.BotCommand{
 		{Command: "add", Description: "Add a new task: /add name [description]"},
 		{Command: "cancel", Description: "Cancel a task timer: /cancel [name]"},
@@ -115,8 +129,18 @@ func (b *Bot) setBotCommands() {
 
 // Processes updates from Telegram
 func (b *Bot) processUpdates(updates tgbotapi.UpdatesChannel) {
-	for update := range updates {
-		go b.processUpdate(b.ctx, update)
+	for {
+		select {
+		case <-b.ctx.Done():
+			log.Println("Stopping updates processing...")
+			return
+		case update := <-updates:
+			b.wg.Add(1)
+			go func(u tgbotapi.Update) {
+				defer b.wg.Done()
+				b.processUpdate(b.ctx, u)
+			}(update)
+		}
 	}
 }
 
@@ -124,13 +148,21 @@ func (b *Bot) processUpdates(updates tgbotapi.UpdatesChannel) {
 func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update) {
 	// Process callback queries
 	if update.CallbackQuery != nil {
-		go b.handleCallbackQuery(ctx, update.CallbackQuery)
+		b.wg.Add(1)
+		go func() {
+			defer b.wg.Done()
+			b.handleCallbackQuery(ctx, update.CallbackQuery)
+		}()
 		return
 	}
 
 	// Process messages
 	if update.Message != nil {
-		go b.handleMessage(ctx, update.Message)
+		b.wg.Add(1)
+		go func() {
+			defer b.wg.Done()
+			b.handleMessage(ctx, update.Message)
+		}()
 		return
 	}
 }
@@ -171,12 +203,12 @@ func (b *Bot) restoreActiveTasks() error {
 			remaining := task.TimeRemaining()
 
 			if remaining <= 0 {
-				go b.handleTaskTimeout(task.ChatID, task.TaskID)
+				go b.handleTaskTimeout(ctx, task.ChatID, task.TaskID)
 				continue
 			}
 
 			// Start a new timer with the remaining time
-			b.startTaskTimer(task.ChatID, task.TaskID, time.Duration(remaining)*time.Second)
+			b.startTaskTimer(ctx, task.ChatID, task.TaskID, time.Duration(remaining)*time.Second)
 
 			restoredCount++
 		}

@@ -14,11 +14,10 @@ import (
 	"time-guard-bot/internal/storage/redis"
 )
 
-// FIXME передавать сюда context?
 // Starts a task timer
-func (b *Bot) startTaskTimer(chatID int64, taskID string, duration time.Duration) {
+func (b *Bot) startTaskTimer(ctx context.Context, chatID int64, taskID string, duration time.Duration) {
 	timer := time.AfterFunc(duration, func() {
-		b.handleTaskTimeout(chatID, taskID)
+		b.handleTaskTimeout(ctx, chatID, taskID)
 	})
 
 	b.timersMx.Lock()
@@ -28,7 +27,7 @@ func (b *Bot) startTaskTimer(chatID int64, taskID string, duration time.Duration
 }
 
 // Handles a task timeout
-func (b *Bot) handleTaskTimeout(chatID int64, taskID string) {
+func (b *Bot) handleTaskTimeout(ctx context.Context, chatID int64, taskID string) {
 	// Remove timer from map
 	b.timersMx.Lock()
 	timerKey := fmt.Sprintf("%d:%s", chatID, taskID)
@@ -36,18 +35,18 @@ func (b *Bot) handleTaskTimeout(chatID int64, taskID string) {
 	b.timersMx.Unlock()
 
 	// Create context
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	// Get task
-	_, err := b.storage.GetTask(ctx, chatID, taskID)
+	_, err := b.storage.GetTask(timeoutCtx, chatID, taskID)
 	if err != nil {
 		log.Printf("Failed to get task on timeout: %v", err)
 		return
 	}
 
 	// Get active task to find the original message ID
-	activeTask, err := b.storage.GetActiveTask(ctx, chatID, taskID)
+	activeTask, err := b.storage.GetActiveTask(timeoutCtx, chatID, taskID)
 	if err != nil {
 		log.Printf("Failed to get active task on timeout: %v", err)
 	} else if activeTask.BotResponseID > 0 {
@@ -62,7 +61,7 @@ func (b *Bot) handleTaskTimeout(chatID int64, taskID string) {
 		}
 	}
 
-	if err := b.storage.EndTask(ctx, chatID, taskID); err != nil {
+	if err := b.storage.EndTask(timeoutCtx, chatID, taskID); err != nil {
 		log.Printf("Failed to end task on timeout: %v", err)
 		return
 	}
@@ -191,7 +190,7 @@ func (b *Bot) handleTimeCommand(ctx context.Context, message *tgbotapi.Message, 
 	}
 
 	// Start timer
-	b.startTaskTimer(message.Chat.ID, task.ID, time.Duration(duration)*time.Minute)
+	b.startTaskTimer(ctx, message.Chat.ID, task.ID, time.Duration(duration)*time.Minute)
 
 	return nil
 }

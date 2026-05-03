@@ -14,6 +14,7 @@ type Storage interface {
 	// Task operations
 	AddTask(ctx context.Context, task *models.Task) error
 	GetTask(ctx context.Context, chatID int64, taskID string) (*models.Task, error)
+	TaskExists(ctx context.Context, chatID int64, taskID string) (bool, error)
 	UpdateTask(ctx context.Context, task *models.Task) error
 	GetTaskByName(ctx context.Context, chatID int64, name string) (*models.Task, error)
 	DeleteTask(ctx context.Context, chatID int64, taskID string) error

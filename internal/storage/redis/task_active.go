@@ -64,8 +64,11 @@ func (rs *Storage) StartTask(ctx context.Context, activeTask *models.ActiveTask)
 	// Get Redis pipeline
 	pipe := rs.client.Pipeline()
 
-	// Save active task
-	pipe.Set(ctx, activeTaskKey, activeTaskJSON, 0)
+	// Calculate TTL: task duration + 10 minutes safety margin
+	ttl := time.Duration(activeTask.Duration+10) * time.Minute
+
+	// Save active task with TTL
+	pipe.Set(ctx, activeTaskKey, activeTaskJSON, ttl)
 
 	// Add to active task list
 	activeTaskListKey := fmt.Sprintf(activeTaskListKey, activeTask.ChatID)
@@ -73,6 +76,9 @@ func (rs *Storage) StartTask(ctx context.Context, activeTask *models.ActiveTask)
 
 	// Add to user's active tasks
 	pipe.SAdd(ctx, userTasksKey, activeTask.TaskID)
+
+	// Add chat to active chats set
+	pipe.SAdd(ctx, activeChatsKey, activeTask.ChatID)
 
 	// Update task status
 	taskKey := fmt.Sprintf(taskIDPrefix, task.ChatID, task.ID)
@@ -137,6 +143,20 @@ func (rs *Storage) EndTask(ctx context.Context, chatID int64, taskID string) err
 	_, err = pipe.Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to end task: %w", err)
+	}
+
+	// Check if chat has any active tasks left
+	count, err := rs.client.SCard(ctx, activeTaskListKey).Result()
+	if err != nil {
+		return fmt.Errorf("failed to check active tasks count: %w", err)
+	}
+
+	// If no active tasks left, remove chat from active chats set
+	if count == 0 {
+		err = rs.client.SRem(ctx, activeChatsKey, chatID).Err()
+		if err != nil {
+			return fmt.Errorf("failed to remove chat from active chats: %w", err)
+		}
 	}
 
 	return nil
@@ -235,23 +255,17 @@ func (rs *Storage) GetCountUserActiveTasks(ctx context.Context, chatID int64, us
 
 // Gets all chats with active tasks
 func (rs *Storage) GetActiveChats(ctx context.Context) ([]int64, error) {
-	var chatIDs []int64
-
-	// Get all keys matching the active task list pattern
-	keys, err := rs.client.Keys(ctx, "active:*").Result()
+	// Get all chat IDs from the active chats set
+	chatIDStrs, err := rs.client.SMembers(ctx, activeChatsKey).Result()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get active chats: %w", err)
 	}
 
-	// Extract chat IDs from keys
-	for _, key := range keys {
+	chatIDs := make([]int64, 0, len(chatIDStrs))
+	for _, chatIDStr := range chatIDStrs {
 		var chatID int64
-		if n, err := fmt.Sscanf(key, activeTaskListKey, &chatID); err == nil && n == 1 {
-			// Check if the set has members
-			count, err := rs.client.SCard(ctx, key).Result()
-			if err == nil && count > 0 {
-				chatIDs = append(chatIDs, chatID)
-			}
+		if _, err := fmt.Sscanf(chatIDStr, "%d", &chatID); err == nil {
+			chatIDs = append(chatIDs, chatID)
 		}
 	}
 
