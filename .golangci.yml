@@ -5,7 +5,7 @@ run:
   modules-download-mode: readonly
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - errcheck
     - govet
@@ -28,6 +28,11 @@ linters:
     errcheck:
       check-type-assertions: true
       check-blank: true
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
 
 formatters:
   enable:
@@ -43,10 +48,3 @@ formatters:
         - default
         - prefix(time-guard-bot)
       custom-order: true
-
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gosec
