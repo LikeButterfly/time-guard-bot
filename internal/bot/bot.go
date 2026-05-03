@@ -1,10 +1,10 @@
-﻿// Copyright 2025 LikeButterfly
+// Copyright 2025 LikeButterfly
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -149,8 +149,10 @@ func (b *Bot) processUpdates(updates tgbotapi.UpdatesChannel) {
 			return
 		case update := <-updates:
 			b.wg.Add(1)
+
 			go func(u tgbotapi.Update) {
 				defer b.wg.Done()
+
 				b.processUpdate(b.ctx, u)
 			}(update)
 		}
@@ -162,20 +164,26 @@ func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update) {
 	// Process callback queries
 	if update.CallbackQuery != nil {
 		b.wg.Add(1)
+
 		go func() {
 			defer b.wg.Done()
+
 			b.handleCallbackQuery(ctx, update.CallbackQuery)
 		}()
+
 		return
 	}
 
 	// Process messages
 	if update.Message != nil {
 		b.wg.Add(1)
+
 		go func() {
 			defer b.wg.Done()
+
 			b.handleMessage(ctx, update.Message)
 		}()
+
 		return
 	}
 }

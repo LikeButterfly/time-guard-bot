@@ -1,10 +1,10 @@
-﻿// Copyright 2025 LikeButterfly
+// Copyright 2025 LikeButterfly
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -67,7 +67,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create Redis storage: %v", err)
 	}
-	defer redisStorage.Close()
+
+	defer func() {
+		if err := redisStorage.Close(); err != nil {
+			log.Printf("Error closing Redis storage: %v", err)
+		}
+	}()
 
 	botConfig := &bot.Config{
 		Token:           tgToken,

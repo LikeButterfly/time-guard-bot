@@ -1,10 +1,10 @@
-﻿// Copyright 2025 LikeButterfly
+// Copyright 2025 LikeButterfly
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,7 +45,7 @@ func GenerateUniqueTaskID(length int, existsFunc func(string) (bool, error)) (st
 	const maxRetries = 10
 
 	for attempt := 0; attempt < maxRetries; attempt++ {
-		id, err := generateRandomID(length)
+		id, err := GenerateTaskID(length)
 		if err != nil {
 			return "", fmt.Errorf("failed to generate ID: %w", err)
 		}
@@ -65,7 +65,7 @@ func GenerateUniqueTaskID(length int, existsFunc func(string) (bool, error)) (st
 }
 
 // Generates a random task ID of specified length (without uniqueness check)
-func generateRandomID(length int) (string, error) {
+func GenerateTaskID(length int) (string, error) {
 	id := make([]byte, length)
 	charCount := big.NewInt(int64(len(TaskIDChars)))
 

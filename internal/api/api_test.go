@@ -1,10 +1,10 @@
-﻿// Copyright 2025 LikeButterfly
+// Copyright 2025 LikeButterfly
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,6 +43,7 @@ type MockStorage struct {
 	GetActiveChatsFunc          func(ctx context.Context) ([]int64, error)
 	GetUserActiveTasksFunc      func(ctx context.Context, chatID int64, userID int64) ([]*models.ActiveTask, error)
 	GetCountUserActiveTasksFunc func(ctx context.Context, chatID int64, userID int64) (int64, error)
+	TaskExistsFunc              func(ctx context.Context, chatID int64, taskID string) (bool, error)
 	CloseFunc                   func() error
 }
 
@@ -106,6 +107,10 @@ func (m *MockStorage) GetCountUserActiveTasks(ctx context.Context, chatID int64,
 	return m.GetCountUserActiveTasksFunc(ctx, chatID, userID)
 }
 
+func (m *MockStorage) TaskExists(ctx context.Context, chatID int64, taskID string) (bool, error) {
+	return m.TaskExistsFunc(ctx, chatID, taskID)
+}
+
 func (m *MockStorage) Close() error {
 	return m.CloseFunc()
 }
@@ -141,7 +146,10 @@ func TestAuthMiddleware(t *testing.T) {
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+
+		if _, err := w.Write([]byte("OK")); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
 
 	// Create a handler with the auth middleware

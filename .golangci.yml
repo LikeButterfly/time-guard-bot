@@ -1,3 +1,5 @@
+version: "2"
+
 run:
   timeout: 5m
   modules-download-mode: readonly
@@ -5,44 +7,45 @@ run:
 linters:
   disable-all: true
   enable:
-    - errcheck        # Check for unchecked errors
-    - goimports       # Checks import order and fixes them
-    - gosimple        # Simplify code
-    - govet           # Examine Go source code for correctness
-    - ineffassign     # Detect ineffectual assignments
-    - staticcheck     # Static analysis checks
-    - typecheck       # Like the front end of a Go compiler
-    - unused          # Check for unused constants, variables, functions and types
-    - revive          # Fast, configurable, extensible linter for Go
-    - misspell        # Find commonly misspelled English words
-    - whitespace      # Check for unnecessary whitespace
-    - wsl             # Enforces empty lines at right places
-    - gci             # Controls Go package import order
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - revive
+    - misspell
+    - whitespace
+    - wsl_v5
+  settings:
+    revive:
+      rules:
+        - name: error-return
+          disabled: false
+        - name: error-strings
+          disabled: false
+        - name: error-naming
+          disabled: false
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
 
-linters-settings:
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(time-guard-bot)
-    custom-order: true
-  revive:
-    rules:
-      - name: error-return
-        disabled: false
-      - name: error-strings
-        disabled: false
-      - name: error-naming
-        disabled: false
-  errcheck:
-    # Report about not checking of errors in type assertions: `a := b.(MyStruct)`
-    check-type-assertions: true
-    # Report about assignment of errors to blank identifier: `_ = err`
-    check-blank: true
-  
+formatters:
+  enable:
+    - goimports
+    - gci
+  settings:
+    goimports:
+      local-prefixes:
+        - time-guard-bot
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(time-guard-bot)
+      custom-order: true
+
 issues:
   exclude-rules:
-    # Exclude some linters from running on tests files
     - path: _test\.go
       linters:
         - errcheck
